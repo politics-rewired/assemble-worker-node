@@ -21,11 +21,11 @@ export function defineConsumer(
     try {
       await job(payload);
       log('Job Succeeded');
-      await channel.ack(msg);
       await onSuccess(payload.id);
-    } catch {
       await channel.ack(msg);
+    } catch {
       await onFailure(payload.id);
+      await channel.ack(msg);
     }
   };
 }

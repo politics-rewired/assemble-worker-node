@@ -96,25 +96,10 @@ function createRunner(
   const channelWrapper = connection.createChannel({ setup: setupMetaQueue });
 
   async function stop() {
-    // todo
+    await channelWrapper.close();
   }
 
   return { stop, channelWrapper };
 }
 
 export { createRunner };
-
-// export async function withPgClient<T = any>(
-//   cb
-// ): Promise<T> {
-//   connect
-//   return
-//   return withPgPool(async pool => {
-//     const client = await pool.connect();
-//     try {
-//       return await cb(client);
-//     } finally {
-//       client.release();
-//     }
-//   });
-// }

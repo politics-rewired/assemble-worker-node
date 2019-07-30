@@ -24,8 +24,7 @@ export function defineConsumer(
       await channel.ack(msg);
       await onSuccess(payload.id);
     } catch {
-      const shouldRequeue = true;
-      await channel.reject(msg, shouldRequeue);
+      await channel.ack(msg);
       await onFailure(payload.id);
     }
   };

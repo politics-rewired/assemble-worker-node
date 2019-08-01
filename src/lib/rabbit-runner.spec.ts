@@ -1,99 +1,111 @@
 import { connect } from 'amqplib';
-import { createRunner, META_QUEUE, TEST_WORKER_QUEUES } from './rabbit-runner';
+import {
+  createRunner,
+  ASSEMBLE_EXCHANGE,
+  META_QUEUE,
+  TEST_WORKER_QUEUES
+} from './rabbit-runner';
 
 async function sleep(n: number) {
   return new Promise((resolve, _reject) => setTimeout(resolve, n));
 }
 
-test('importing rabbit creates meta:new-queue', async () => {
-  await createRunner(
-    'amqp://localhost',
-    {},
-    async function() {},
-    async function() {}
-  );
+const SLEEP_TIME = 500;
 
-  await sleep(100);
+describe('rabbit interaction', () => {
+  test('importing rabbit creates meta-queue', async () => {
+    await createRunner(
+      'amqp://localhost',
+      {},
+      async function() {},
+      async function() {}
+    );
 
-  const connection = await connect('amqp://localhost');
-  const channel = await connection.createChannel();
+    await sleep(SLEEP_TIME);
 
-  const queueExists = await channel.checkQueue(META_QUEUE);
-  expect(queueExists.queue).toBe(META_QUEUE);
-});
+    const connection = await connect('amqp://localhost');
+    const channel = await connection.createChannel();
 
-test('sending a new queue to the meta queue creates the new queue', async () => {
-  const { channelWrapper } = await createRunner(
-    'amqp://localhost',
-    {},
-    async function() {},
-    async function() {}
-  );
+    const queueExists = await channel.checkQueue(META_QUEUE);
+    expect(queueExists.queue).toBe(META_QUEUE);
+  });
 
-  await channelWrapper.sendToQueue(
-    'meta:new-queue',
-    Buffer.from(TEST_WORKER_QUEUES[0]),
-    {
-      persistent: true
+  test('sending a new queue to the meta queue creates the new queue', async () => {
+    const { channelWrapper } = await createRunner(
+      'amqp://localhost',
+      {},
+      async function() {},
+      async function() {}
+    );
+
+    await sleep(SLEEP_TIME);
+
+    await channelWrapper.publish(
+      ASSEMBLE_EXCHANGE,
+      META_QUEUE,
+      Buffer.from(TEST_WORKER_QUEUES[0]),
+      {
+        persistent: true
+      }
+    );
+
+    const connection = await connect('amqp://localhost');
+    const channel = await connection.createChannel();
+
+    const queueExists = await channel.checkQueue(TEST_WORKER_QUEUES[0]);
+    expect(queueExists.queue).toBe(TEST_WORKER_QUEUES[0]);
+  });
+
+  test('sending a job should call onSuccess for that job', async () => {
+    const jobName = 'trivial-success';
+
+    async function triviallySuccessfulJob(_payload) {
+      return undefined;
     }
-  );
 
-  await sleep(100);
+    const onSuccess = jest.fn();
 
-  const connection = await connect('amqp://localhost');
-  const channel = await connection.createChannel();
+    const { channelWrapper } = await createRunner(
+      'amqp://localhost',
+      { [jobName]: triviallySuccessfulJob },
+      onSuccess,
+      async function() {}
+    );
 
-  const queueExists = await channel.checkQueue(TEST_WORKER_QUEUES[0]);
-  expect(queueExists.queue).toBe(TEST_WORKER_QUEUES[0]);
-});
+    await channelWrapper.publish(
+      ASSEMBLE_EXCHANGE,
+      jobName,
+      Buffer.from(JSON.stringify({ value: 'value' }))
+    );
 
-test('sending a job should call onSuccess for that job', async () => {
-  const jobName = 'trivial-success';
+    await sleep(SLEEP_TIME);
 
-  async function triviallySuccessfulJob(_payload) {
-    return undefined;
-  }
+    expect(onSuccess).toHaveBeenCalled();
+  });
 
-  const onSuccess = jest.fn();
+  test('sending a job should call onFailure for that job', async () => {
+    const jobName = 'trivial-failure';
+    async function triviallyFailingJob(_payload) {
+      throw new Error("I'm a failure!");
+    }
 
-  const { channelWrapper } = await createRunner(
-    'amqp://localhost',
-    { [jobName]: triviallySuccessfulJob },
-    onSuccess,
-    async function() {}
-  );
+    const onFailure = jest.fn();
 
-  await channelWrapper.sendToQueue(
-    jobName,
-    Buffer.from(JSON.stringify({ value: 'value' }))
-  );
+    const { channelWrapper } = await createRunner(
+      'amqp://localhost',
+      { [jobName]: triviallyFailingJob },
+      async function() {},
+      onFailure
+    );
 
-  await sleep(100);
+    await channelWrapper.publish(
+      ASSEMBLE_EXCHANGE,
+      jobName,
+      Buffer.from(JSON.stringify({ value: 'value' }))
+    );
 
-  expect(onSuccess).toHaveBeenCalled();
-});
+    await sleep(SLEEP_TIME);
 
-test('sending a job should call onFailure for that job', async () => {
-  const jobName = 'trivial-failure';
-  async function triviallyFailingJob(_payload) {
-    throw new Error("I'm a failure!");
-  }
-
-  const onFailure = jest.fn();
-
-  const { channelWrapper } = await createRunner(
-    'amqp://localhost',
-    { [jobName]: triviallyFailingJob },
-    async function() {},
-    onFailure
-  );
-
-  await channelWrapper.sendToQueue(
-    jobName,
-    Buffer.from(JSON.stringify({ value: 'value' }))
-  );
-
-  await sleep(100);
-
-  expect(onFailure).toHaveBeenCalled();
+    expect(onFailure).toHaveBeenCalled();
+  });
 });

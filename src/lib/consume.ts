@@ -12,9 +12,18 @@ export function defineConsumer(
   const log = debug(`consumer:${queueName}`);
 
   return async function consumer(msg: Message) {
-    const paylodString = msg.content.toString();
-    const payload = JSON.parse(paylodString);
-    log('Got %j', payload);
+    const payloadString = msg.content.toString();
+    log('Got payload string: %s', payloadString);
+
+    const jobString = payloadString.replace(queueName + '|', '');
+
+    let payload;
+    try {
+      payload = JSON.parse(jobString);
+      log('Got %j', payload);
+    } catch (ex) {
+      payload = jobString;
+    }
 
     log('Running job %j', job);
 

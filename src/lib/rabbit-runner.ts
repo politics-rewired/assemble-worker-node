@@ -3,7 +3,8 @@ import { connect, ChannelWrapper } from 'amqp-connection-manager';
 import { defineConsumer } from './consume';
 import { TaskList, SuccessFn, FailureFn } from './interfaces';
 
-export const META_QUEUE = 'meta:new-queue';
+export const ASSEMBLE_EXCHANGE = 'assemble_worker';
+export const META_QUEUE = 'meta-queue';
 export const TEST_WORKER_QUEUES = ['trivial-success', 'trivial-failure'];
 
 function defineSetupWorkerQueue(
@@ -14,6 +15,8 @@ function defineSetupWorkerQueue(
 ) {
   return async function(channel: ConfirmChannel) {
     await channel.assertQueue(queueName, { durable: true });
+    await channel.bindQueue(queueName, ASSEMBLE_EXCHANGE, queueName);
+
     // todo - do something with taskList
     const job = taskList[queueName];
 
@@ -37,6 +40,7 @@ function defineSetupMetaQueue(
 ) {
   return async function(channel: ConfirmChannel) {
     await channel.assertQueue(META_QUEUE, { durable: true });
+    await channel.bindQueue(META_QUEUE, ASSEMBLE_EXCHANGE, META_QUEUE);
 
     // Define handler for creating new queues
     await Promise.all(
@@ -53,7 +57,9 @@ function defineSetupMetaQueue(
     );
 
     channel.consume(META_QUEUE, async (msg: Message) => {
-      const newQueueName = msg.content.toString();
+      const payloadString = msg.content.toString();
+      console.log(69, payloadString);
+      const newQueueName = payloadString.replace(META_QUEUE + '|', '');
 
       const channelWrapper = getChannelWrapper();
 
@@ -71,6 +77,10 @@ function defineSetupMetaQueue(
       await channelWrapper.addSetup(setupWorkerQueue);
     });
   };
+}
+
+async function setupAssembleQueue(channel: ConfirmChannel) {
+  await channel.assertExchange(ASSEMBLE_EXCHANGE, 'direct');
 }
 
 function createRunner(
@@ -93,7 +103,12 @@ function createRunner(
     onFailure
   );
 
-  const channelWrapper = connection.createChannel({ setup: setupMetaQueue });
+  const channelWrapper = connection.createChannel({
+    setup: async channel => {
+      await setupAssembleQueue(channel);
+      await setupMetaQueue(channel);
+    }
+  });
 
   async function stop() {
     await channelWrapper.close();

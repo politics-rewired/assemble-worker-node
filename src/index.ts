@@ -1,7 +1,6 @@
 import { TaskList } from './lib/interfaces';
 import { migrate } from './lib/migrate';
-import { makeHandlers } from './lib/handlers';
-import { makePoke } from './lib/poke';
+import { makePgFunctions } from './lib/pg-functions';
 import { createRunner } from './lib/rabbit-runner';
 import { Pool } from 'pg';
 
@@ -13,20 +12,23 @@ type AssembleWorkerOptions = {
   amqpConnectionString: string;
   taskList: TaskList;
   pokeInterval?: number;
+  skipAutoMigrate?: boolean;
 };
 
 export async function run(options: AssembleWorkerOptions) {
+  const skipAutoMigrate = options.skipAutoMigrate || false;
+
   const pool = options.pgPool
     ? options.pgPool
     : new Pool({ connectionString: options.databaseConnectionString });
 
-  const client = await pool.connect();
+  if (!skipAutoMigrate) {
+    const client = await pool.connect();
+    await migrate(client);
+    await client.release();
+  }
 
-  await migrate(client);
-
-  const { onSuccess, onFailure } = await makeHandlers(pool);
-
-  const poke = await makePoke(pool);
+  const { onSuccess, onFailure, poke } = makePgFunctions(pool);
 
   const pokeRunner = setInterval(
     poke,

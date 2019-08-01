@@ -1,8 +1,9 @@
 import { Pool } from 'pg';
+import config from './config';
 import { migrate } from './migrate';
 
 const pool = new Pool({
-  connectionString: 'postgres://localhost:5432/assemble_worker_test'
+  connectionString: config.migrationTestDatabaseConnectionString
 });
 
 describe('migrate', () => {

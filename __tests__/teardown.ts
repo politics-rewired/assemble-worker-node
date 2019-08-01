@@ -1,5 +1,8 @@
 import { connect } from 'amqplib';
+import config from '../src/lib/config';
 import { META_QUEUE, TEST_WORKER_QUEUES } from '../src/lib/rabbit-runner';
+import { reset } from '../src/lib/migrate';
+import { Pool } from 'pg';
 
 export default async function() {
   const connection = await connect('amqp://localhost');
@@ -9,4 +12,16 @@ export default async function() {
   for (let queue of TEST_WORKER_QUEUES) {
     await channel.deleteQueue(queue);
   }
+
+  await channel.close();
+
+  const pool = new Pool({
+    connectionString: config.testDatabaseConnectionString
+  });
+
+  const client = await pool.connect();
+
+  await reset(client);
+  await client.release();
+  await pool.end();
 }

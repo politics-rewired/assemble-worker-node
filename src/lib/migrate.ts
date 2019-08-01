@@ -61,3 +61,7 @@ export async function migrate(client: PoolClient) {
     }
   }
 }
+
+export async function reset(client: PoolClient) {
+  await client.query('drop schema if exists assemble_worker cascade;');
+}

@@ -58,7 +58,6 @@ function defineSetupMetaQueue(
 
     channel.consume(META_QUEUE, async (msg: Message) => {
       const payloadString = msg.content.toString();
-      console.log(69, payloadString);
       const newQueueName = payloadString.replace(META_QUEUE + '|', '');
 
       const channelWrapper = getChannelWrapper();

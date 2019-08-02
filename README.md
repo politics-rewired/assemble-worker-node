@@ -32,6 +32,9 @@ Fortunately, RabbitMQ uses something called Round Robin dispatch, which ensures 
 
 By using SubZero’s high throughput [pg-amqp-bridge](https://github.com/subzerocloud/pg-amqp-bridge/), we’re able to send messages to RabbitMQ from Postgres at a higher rate, and scale our NodeJS workers around them to achieve a much higher throughput!
 
+This library can achieve around 1400 jobs/sec with a concurrency of 1, and around 1800 jobs/sec with a greater concurrency on
+a single machine. I will update with more benchmarks as I have more data with more workers!
+
 ## Usage
 
 ```

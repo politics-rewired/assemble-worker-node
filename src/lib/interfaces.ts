@@ -15,6 +15,7 @@ export type CreateQueueFn = (
 
 export interface JobPayload {
   id: number;
+  [key: string]: any;
 }
 
 export type Task = (payload: JobPayload) => Promise<any>;

@@ -1,5 +1,6 @@
 export type SuccessFn = (jobId: number) => Promise<void>;
 export type FailureFn = (jobId: number) => Promise<void>;
+export type CreateQueueFn = (queueName: string) => Promise<void>;
 
 export interface JobPayload {
   id: number;

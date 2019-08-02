@@ -18,6 +18,7 @@ describe('rabbit interaction', () => {
       'amqp://localhost',
       {},
       async function() {},
+      async function() {},
       async function() {}
     );
 
@@ -31,14 +32,15 @@ describe('rabbit interaction', () => {
   });
 
   test('sending a new queue to the meta queue creates the new queue', async () => {
+    const registerQueue = jest.fn();
+
     const { channelWrapper } = await createRunner(
       'amqp://localhost',
       {},
       async function() {},
-      async function() {}
+      async function() {},
+      registerQueue
     );
-
-    await sleep(SLEEP_TIME);
 
     await channelWrapper.publish(
       ASSEMBLE_EXCHANGE,
@@ -49,11 +51,15 @@ describe('rabbit interaction', () => {
       }
     );
 
+    await sleep(SLEEP_TIME);
+
     const connection = await connect('amqp://localhost');
     const channel = await connection.createChannel();
 
     const queueExists = await channel.checkQueue(TEST_WORKER_QUEUES[0]);
     expect(queueExists.queue).toBe(TEST_WORKER_QUEUES[0]);
+
+    expect(registerQueue).toHaveBeenCalled();
   });
 
   test('sending a job should call onSuccess for that job', async () => {
@@ -69,6 +75,7 @@ describe('rabbit interaction', () => {
       'amqp://localhost',
       { [jobName]: triviallySuccessfulJob },
       onSuccess,
+      async function() {},
       async function() {}
     );
 
@@ -95,7 +102,8 @@ describe('rabbit interaction', () => {
       'amqp://localhost',
       { [jobName]: triviallyFailingJob },
       async function() {},
-      onFailure
+      onFailure,
+      async function() {}
     );
 
     await channelWrapper.publish(

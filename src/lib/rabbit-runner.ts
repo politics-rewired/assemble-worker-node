@@ -1,7 +1,7 @@
 import { ConfirmChannel, Message } from 'amqplib';
 import { connect, ChannelWrapper } from 'amqp-connection-manager';
 import { defineConsumer } from './consume';
-import { TaskList, SuccessFn, FailureFn } from './interfaces';
+import { TaskList, SuccessFn, FailureFn, CreateQueueFn } from './interfaces';
 
 export const ASSEMBLE_EXCHANGE = 'assemble_worker';
 export const META_QUEUE = 'meta-queue';
@@ -11,14 +11,16 @@ function defineSetupWorkerQueue(
   queueName: string,
   taskList: TaskList,
   onSuccess: SuccessFn,
-  onFailure: FailureFn
+  onFailure: FailureFn,
+  registerQueue: CreateQueueFn
 ) {
   return async function(channel: ConfirmChannel) {
+    // todo - failure if nothing found
+    const job = taskList[queueName];
+
     await channel.assertQueue(queueName, { durable: true });
     await channel.bindQueue(queueName, ASSEMBLE_EXCHANGE, queueName);
-
-    // todo - do something with taskList
-    const job = taskList[queueName];
+    await registerQueue(queueName);
 
     const consumer = defineConsumer(
       channel,
@@ -36,7 +38,8 @@ function defineSetupMetaQueue(
   getChannelWrapper: () => ChannelWrapper,
   taskList: TaskList,
   onSuccess: SuccessFn,
-  onFailure: FailureFn
+  onFailure: FailureFn,
+  registerQueue: CreateQueueFn
 ) {
   return async function(channel: ConfirmChannel) {
     await channel.assertQueue(META_QUEUE, { durable: true });
@@ -49,7 +52,8 @@ function defineSetupMetaQueue(
           queueName,
           taskList,
           onSuccess,
-          onFailure
+          onFailure,
+          registerQueue
         );
 
         return await setupWorkerQueue(channel);
@@ -66,7 +70,8 @@ function defineSetupMetaQueue(
         newQueueName,
         taskList,
         onSuccess,
-        onFailure
+        onFailure,
+        registerQueue
       );
 
       // Add it now
@@ -86,7 +91,8 @@ function createRunner(
   amqpConnectionString: string,
   taskList: TaskList,
   onSuccess: SuccessFn,
-  onFailure: FailureFn
+  onFailure: FailureFn,
+  registerQueue: CreateQueueFn
 ) {
   // Create a new connection manager
   const connection = connect([amqpConnectionString]);
@@ -99,7 +105,8 @@ function createRunner(
     getChannelWrapper,
     taskList,
     onSuccess,
-    onFailure
+    onFailure,
+    registerQueue
   );
 
   const channelWrapper = connection.createChannel({

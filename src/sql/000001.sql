@@ -1,15 +1,47 @@
 BEGIN;
 
+-- Global testing helper function
+create table assemble_worker.test_queue_messages (
+  routing_key text,
+  message_body text
+);
+
+create function assemble_worker.send_message(routing_key text, message_body text) returns void as $$
+declare
+  v_test_mode text;
+begin
+  select current_setting('worker.test', true) into v_test_mode;
+ 
+  if lower(v_test_mode) = 'on' then
+    insert into assemble_worker.test_queue_messages (routing_key, message_body)
+    values (routing_key, message_body);
+  else
+    perform pg_notify('assemble-worker', routing_key || '|' || message_body);
+  end if;
+end;
+$$ language plpgsql;
+
 -- Create the tables
 create table assemble_worker.job_queues (
   queue_name text not null primary key,
   created boolean default false
 );
 
+create function assemble_worker.register_queue(queue_name_to_register text) returns void as $$
+begin
+  insert into assemble_worker.job_queues (queue_name, created)
+  values (queue_name_to_register, true)
+  on conflict (queue_name)
+  do update
+  set created = true;
+end;
+$$ language plpgsql;
+
 create table assemble_worker.pending_jobs (
   queue_name text not null,
   payload json default '{}'::json not null,
   max_attempts int default 25 not null,
+  run_at timestamp,
   created_at timestamp not null default now()
 );
 
@@ -17,7 +49,6 @@ create index queue_name_idx on assemble_worker.pending_jobs (queue_name);
 
 create type assemble_worker.job_status as enum (
   'running',
-  'waiting for queue',
   'waiting to run',
   'waiting to retry',
   'failed'
@@ -46,24 +77,35 @@ create index jobs_poke_idx on assemble_worker.jobs (run_at, status);
 -- Notify worker of new queues to be created in Rabbit
 create function assemble_worker.tg_job_queues__notify_new_queues() returns trigger as $$
 begin
-  perform pg_notify('assemble-worker', 'meta:new-queue' || '|', NEW.queue_name);
+  perform assemble_worker.send_message('meta-queue', NEW.queue_name);
   return NEW;
 end;
 $$ language plpgsql;
 
+create trigger _500_notify_new_queues
+  after insert
+  on assemble_worker.job_queues
+  for each row
+  when (NEW.created = false)
+  execute procedure assemble_worker.tg_job_queues__notify_new_queues();
+
 -- When a queue has been created, send pending jobs for that queue to jobs 
 create function assemble_worker.tg_job_queues__after_queue_create() returns trigger as $$
 begin
-  create temp table assemble_worker.pending_jobs_to_queue as
-  select queue_name, payload, created_at, max_attempts
-  from assemble_worker.pending_jobs
-  where queue_name = NEW.queue_name;
+  with pending_jobs_to_queue as (
+    select queue_name, payload, created_at, run_at, max_attempts,
+      (case
+        when run_at is null then 'running'::assemble_worker.job_status
+        else 'waiting to run'::assemble_worker.job_status
+      end) as status
+    from assemble_worker.pending_jobs
+    where queue_name = NEW.queue_name
+  )
+  insert into assemble_worker.jobs (queue_name, payload, created_at, run_at, max_attempts, status)
+  select queue_name, payload, created_at, run_at, max_attempts, status
+  from pending_jobs_to_queue;
 
-  insert into assemble_worker.jobs (queue_name, payload, created_at, max_attempts)
-  select queue_name, payload, created_at, max_attempts
-  from assemble_worker.pending_jobs_to_queue;
-
-  delete from assemble_worker.pending_jobs_to_queue
+  delete from assemble_worker.pending_jobs
   where queue_name = NEW.queue_name;
 
   return NEW;
@@ -71,7 +113,8 @@ end;
 $$ language plpgsql;
 
 create trigger _500_queue_pending_jobs
-  after update on assemble_worker.job_queues
+  after update
+  on assemble_worker.job_queues
   for each row
   when (OLD.created = false and NEW.created = true)
   execute procedure assemble_worker.tg_job_queues__after_queue_create();
@@ -81,9 +124,8 @@ create function assemble_worker.tg_jobs__notify_new_jobs() returns trigger as $$
 declare
   v_job_body json;
 begin
-  select json_build_object('job_id', NEW.id) || NEW.payload into v_job_body;
-
-  perform pg_notify('assemble-worker', NEW.queue_name || '|' || v_job_body::text);
+  select (json_build_object('job_id', NEW.id)::jsonb || NEW.payload::jsonb)::json into v_job_body;
+  perform assemble_worker.send_message(NEW.queue_name, v_job_body::text);
   return NEW;
 end;
 $$ language plpgsql;
@@ -125,13 +167,14 @@ begin
     insert into assemble_worker.jobs (queue_name, payload, max_attempts, run_at, status)
     values (job_name, payload, max_attempts, run_at, v_job_status);
   else
-    insert into assemble_worker.pending_jobs (queue_name, payload, max_attempts, run_at, status)
-    values (job_name, payload, max_attempts, run_at, 'waiting for queue'::assemble_worker.job_status);
+    insert into assemble_worker.pending_jobs (queue_name, payload, max_attempts, run_at)
+    values (job_name, payload, max_attempts, run_at);
 
     insert into assemble_worker.job_queues (queue_name)
     values (job_name)
     on conflict (queue_name) do nothing; 
   end if;
+
 end;
 $$ language plpgsql;
 
@@ -189,8 +232,16 @@ declare
   v_last_poke timestamp;
   v_new_poke timestamp;
   v_maybe_new_poke timestamp;
+  v_updated_count timestamp;
 begin
-  select poked_at from assemble_worker.pokes order by poked_at desc limit 1 into v_last_poke;
+  select poked_at
+  from assemble_worker.pokes
+  order by poked_at desc 
+  limit 1
+  into v_last_poke;
+
+  select greatest('-infinity'::timestamp, v_last_poke) into v_last_poke;
+
   select now()::timestamp into v_new_poke;
 
   update assemble_worker.jobs
@@ -201,13 +252,14 @@ begin
     and status <> 'running'::assemble_worker.job_status
     and status <> 'failed'::assemble_worker.job_status;
 
-  select poked_at from assemble_worker.pokes order by poked_at desc limit 1 into v_maybe_new_poke;
+  -- Concurrenct modification checking - causes errors and is unnecessary - left for posterity
+  -- select poked_at from assemble_worker.pokes order by poked_at desc limit 1 into v_maybe_new_poke;
 
   -- We don't want to recall the jobs, so let's abort the transaction
   -- this might not be necessary with the update trigger not firing anyways
-  if v_maybe_new_poke > v_last_poke then
-    raise 'Poke conflict: I lose so that others may win';
-  end if;
+  -- if v_maybe_new_poke > v_last_poke then
+  --   raise '%', 'Poke conflict: I lose so that others may win';
+  -- end if;
 
   insert into assemble_worker.pokes (poked_at) values (v_new_poke);
 end;

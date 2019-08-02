@@ -16,7 +16,7 @@ begin
     insert into assemble_worker.test_queue_messages (routing_key, message_body)
     values (routing_key, message_body);
   else
-    perform pg_notify('assemble-worker', routing_key || '|' || message_body);
+    perform pg_notify('assemble_worker', routing_key || '|' || message_body);
   end if;
 end;
 $$ language plpgsql;
@@ -68,8 +68,10 @@ create table assemble_worker.jobs (
 );
 
 create table assemble_worker.pokes (
-  poked_at timestamp default now() primary key
+  poked_at timestamp not null
 );
+
+create index pokes_idx on assemble_worker.pokes (poked_at desc);
 
 create index jobs_id_idx on assemble_worker.jobs (id);
 create index jobs_poke_idx on assemble_worker.jobs (run_at, status);
@@ -227,12 +229,12 @@ begin
 end;
 $$ language plpgsql;
 
-create function assemble_worker.poke() returns void as $$
+create function assemble_worker.poke() returns integer as $$
 declare
   v_last_poke timestamp;
   v_new_poke timestamp;
   v_maybe_new_poke timestamp;
-  v_updated_count timestamp;
+  v_updated_count integer;
 begin
   select poked_at
   from assemble_worker.pokes
@@ -240,17 +242,24 @@ begin
   limit 1
   into v_last_poke;
 
-  select greatest('-infinity'::timestamp, v_last_poke) into v_last_poke;
+  select greatest('epoch'::timestamp, v_last_poke) into v_last_poke;
 
   select now()::timestamp into v_new_poke;
 
-  update assemble_worker.jobs
-  set
-    status = 'running'::assemble_worker.job_status
-  where run_at > v_last_poke
-    and run_at <= v_new_poke
-    and status <> 'running'::assemble_worker.job_status
-    and status <> 'failed'::assemble_worker.job_status;
+  with ran_jobs as (
+    update assemble_worker.jobs
+    set
+      status = 'running'::assemble_worker.job_status
+    where run_at > v_last_poke
+      and run_at <= v_new_poke
+      and status <> 'running'::assemble_worker.job_status
+      and status <> 'failed'::assemble_worker.job_status
+    returning 1
+  )
+  select count(*) from ran_jobs into v_updated_count;
+
+  insert into assemble_worker.pokes (poked_at) values (v_new_poke);
+  return v_updated_count;
 
   -- Concurrenct modification checking - causes errors and is unnecessary - left for posterity
   -- select poked_at from assemble_worker.pokes order by poked_at desc limit 1 into v_maybe_new_poke;
@@ -260,8 +269,6 @@ begin
   -- if v_maybe_new_poke > v_last_poke then
   --   raise '%', 'Poke conflict: I lose so that others may win';
   -- end if;
-
-  insert into assemble_worker.pokes (poked_at) values (v_new_poke);
 end;
 $$ language plpgsql;
 

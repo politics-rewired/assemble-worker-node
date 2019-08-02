@@ -54,11 +54,10 @@ export function makePgFunctions(pool: Pool) {
    * @param client optional postgres client if the session matters
    */
   const addJob = async (job: JobParams, client?: PoolClient) => {
-    await (client || pool).query('select assemble_worker.add_job($1, $2, $3)', [
-      job.queueName,
-      job.payload,
-      job.runAt
-    ]);
+    return await (client || pool).query(
+      'select assemble_worker.add_job($1, $2, $3)',
+      [job.queueName, job.payload, job.runAt]
+    );
   };
 
   /**

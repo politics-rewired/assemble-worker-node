@@ -21,7 +21,7 @@ async function main() {
     }, 1000);
   }
 
-  const worker = run({
+  const worker = await run({
     pgPool: pool,
     amqpConnectionString: config.amqpConnectionString,
     taskList: {

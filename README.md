@@ -24,6 +24,7 @@ So, just like Graphile Worker, we want to:
 But we want higher throughput!
 
 **Why RabbitMQ?**
+
 The bottleneck of the Graphile Worker is the `SELECT FOR UPDATE .. SKIP LOCKED`functionality, which is a native PostgreSQL feature to ensure that two simultaneous queries selecting from the same table will not select each other's rows. This is necessary to prevent two concurrently running workers, both fetching jobs, from selecting the same job, and running one job twice.
 
 Although Graphile Worker uses `LISTEN/NOTIFY` to notify workers about new jobs for low job queue -> job start latency, PostgreSQL `NOTIFY` sends a message to all clients listening on a channel – which makes it unsuitable as a method for delivering jobs to be run. Instead, it’s only suitable for notifying workers that they should query for new jobs.

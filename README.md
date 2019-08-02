@@ -2,14 +2,6 @@
 
 ## Introduction
 
-This is a worker library heavily influenced by `graphile/worker`
-
-docker run --rm -it --net=host -e POSTGRESQL_URI="postgres://benpacker@docker.for.mac.host.internal/assemble_worker_test" -e AMQP_URI="amqp://docker.for.mac.host.internal//" -e BRIDGE_CHANNELS="assemble_worker:assemble_worker" subzerocloud/pg-amqp-bridge
-
-# Assemble Worker
-
-## Introduction
-
 This is a Node.js/PostgreSQL/RabbitMQ worker heavily influence by [@benjie](https://github.com/benjie)'s [graphile/worker](#).
 The goal is to have a similar API to `graphile/worker`with a higher throughput enabled by the introduction of RabbitMQ.
 

@@ -2,8 +2,8 @@ import { connect } from 'amqplib';
 import {
   createRunner,
   ASSEMBLE_EXCHANGE,
-  META_QUEUE,
-  TEST_WORKER_QUEUES
+  META_QUEUE
+  // TEST_WORKER_QUEUES
 } from './rabbit-runner';
 
 async function sleep(n: number) {
@@ -31,36 +31,40 @@ describe('rabbit interaction', () => {
     expect(queueExists.queue).toBe(META_QUEUE);
   });
 
-  test('sending a new queue to the meta queue creates the new queue', async () => {
-    const registerQueue = jest.fn();
+  /**
+   * Unsure what the desired behavior is here – for now, creating queues based on task names
+   * at startup is good enough
+   */
+  // test('sending a new queue to the meta queue creates the new queue', async () => {
+  //   const registerQueue = jest.fn();
 
-    const { channelWrapper } = await createRunner(
-      'amqp://localhost',
-      {},
-      async function() {},
-      async function() {},
-      registerQueue
-    );
+  //   const { channelWrapper } = await createRunner(
+  //     'amqp://localhost',
+  //     {},
+  //     async function() {},
+  //     async function() {},
+  //     registerQueue
+  //   );
 
-    await channelWrapper.publish(
-      ASSEMBLE_EXCHANGE,
-      META_QUEUE,
-      Buffer.from(TEST_WORKER_QUEUES[0]),
-      {
-        persistent: true
-      }
-    );
+  //   await channelWrapper.publish(
+  //     ASSEMBLE_EXCHANGE,
+  //     META_QUEUE,
+  //     Buffer.from(TEST_WORKER_QUEUES[0]),
+  //     {
+  //       persistent: true
+  //     }
+  //   );
 
-    await sleep(SLEEP_TIME);
+  //   await sleep(SLEEP_TIME);
 
-    const connection = await connect('amqp://localhost');
-    const channel = await connection.createChannel();
+  //   const connection = await connect('amqp://localhost');
+  //   const channel = await connection.createChannel();
 
-    const queueExists = await channel.checkQueue(TEST_WORKER_QUEUES[0]);
-    expect(queueExists.queue).toBe(TEST_WORKER_QUEUES[0]);
+  //   const queueExists = await channel.checkQueue(TEST_WORKER_QUEUES[0]);
+  //   expect(queueExists.queue).toBe(TEST_WORKER_QUEUES[0]);
 
-    expect(registerQueue).toHaveBeenCalled();
-  });
+  //   expect(registerQueue).toHaveBeenCalled();
+  // });
 
   test('sending a job should call onSuccess for that job', async () => {
     const jobName = 'trivial-success';
@@ -73,7 +77,7 @@ describe('rabbit interaction', () => {
 
     const { channelWrapper } = await createRunner(
       'amqp://localhost',
-      { [jobName]: triviallySuccessfulJob },
+      { [jobName]: { concurrency: 1, task: triviallySuccessfulJob } },
       onSuccess,
       async function() {},
       async function() {}
@@ -100,7 +104,7 @@ describe('rabbit interaction', () => {
 
     const { channelWrapper } = await createRunner(
       'amqp://localhost',
-      { [jobName]: triviallyFailingJob },
+      { [jobName]: { concurrency: 1, task: triviallyFailingJob } },
       async function() {},
       onFailure,
       async function() {}

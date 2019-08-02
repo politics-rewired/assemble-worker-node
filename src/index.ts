@@ -28,7 +28,9 @@ export async function run(options: AssembleWorkerOptions) {
     await client.release();
   }
 
-  const { onSuccess, onFailure, poke } = makePgFunctions(pool);
+  const { onSuccess, onFailure, poke, registerQueue, addJob } = makePgFunctions(
+    pool
+  );
 
   const pokeRunner = setInterval(
     poke,
@@ -39,7 +41,8 @@ export async function run(options: AssembleWorkerOptions) {
     options.amqpConnectionString,
     options.taskList,
     onSuccess,
-    onFailure
+    onFailure,
+    registerQueue
   );
 
   async function stop() {
@@ -47,5 +50,5 @@ export async function run(options: AssembleWorkerOptions) {
     await runner.stop;
   }
 
-  return { stop };
+  return { stop, addJob };
 }

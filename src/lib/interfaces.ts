@@ -1,4 +1,4 @@
-import { PoolClient, Pool } from 'pg';
+import { PoolClient } from 'pg';
 
 export type SuccessFn = (jobId: number, client?: PoolClient) => Promise<any>;
 
@@ -20,5 +20,8 @@ export interface JobPayload {
 export type Task = (payload: JobPayload) => Promise<any>;
 
 export type TaskList = {
-  [key: string]: Task;
+  [key: string]: {
+    concurrency: number;
+    task: Task;
+  };
 };

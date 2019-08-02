@@ -34,7 +34,7 @@ describe('integration tests', () => {
 
     const runner = await createRunner(
       config.amqpConnectionString,
-      { [JOB_NAME]: DUMMY_SUCCEEDING_JOB },
+      { [JOB_NAME]: { concurrency: 1, task: DUMMY_SUCCEEDING_JOB } },
       onSuccess,
       async function() {},
       registerQueue
@@ -53,7 +53,7 @@ describe('integration tests', () => {
 
     const runner = await createRunner(
       config.amqpConnectionString,
-      { [JOB_NAME]: DUMMY_SUCCEEDING_JOB },
+      { [JOB_NAME]: { concurrency: 1, task: DUMMY_SUCCEEDING_JOB } },
       onSuccess,
       async function() {},
       registerQueue
@@ -85,7 +85,7 @@ describe('integration tests', () => {
 
     const runner = await createRunner(
       config.amqpConnectionString,
-      { [JOB_NAME]: DUMMY_FAILING_JOB },
+      { [JOB_NAME]: { concurrency: 1, task: DUMMY_FAILING_JOB } },
       async function() {},
       onFailure,
       registerQueue

@@ -1,5 +1,6 @@
 import { ConfirmChannel, Message } from 'amqplib';
 import { connect, ChannelWrapper } from 'amqp-connection-manager';
+import { times } from 'lodash';
 import { defineConsumer } from './consume';
 import { TaskList, SuccessFn, FailureFn, CreateQueueFn } from './interfaces';
 
@@ -15,8 +16,11 @@ function defineSetupWorkerQueue(
   registerQueue: CreateQueueFn
 ) {
   return async function(channel: ConfirmChannel) {
-    // todo - failure if nothing found
-    const job = taskList[queueName];
+    const task = taskList[queueName];
+
+    if (!task) {
+      return; // todo - logging
+    }
 
     await channel.assertQueue(queueName, { durable: true });
     await channel.bindQueue(queueName, ASSEMBLE_EXCHANGE, queueName);
@@ -25,12 +29,14 @@ function defineSetupWorkerQueue(
     const consumer = defineConsumer(
       channel,
       queueName,
-      job,
+      task.task,
       onSuccess,
       onFailure
     );
 
-    channel.consume(queueName, consumer, { noAck: false });
+    times(Math.max(task.concurrency, 1), () => {
+      channel.consume(queueName, consumer, { noAck: false });
+    });
   };
 }
 
@@ -39,7 +45,8 @@ function defineSetupMetaQueue(
   taskList: TaskList,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
-  registerQueue: CreateQueueFn
+  registerQueue: CreateQueueFn,
+  jobRegistryCache: Set<string>
 ) {
   return async function(channel: ConfirmChannel) {
     await channel.assertQueue(META_QUEUE, { durable: true });
@@ -48,15 +55,20 @@ function defineSetupMetaQueue(
     // Define handler for creating new queues
     await Promise.all(
       Object.keys(taskList).map(async queueName => {
-        const setupWorkerQueue = defineSetupWorkerQueue(
-          queueName,
-          taskList,
-          onSuccess,
-          onFailure,
-          registerQueue
-        );
+        const queueAlreadyRegistered = jobRegistryCache.has(queueName);
 
-        return await setupWorkerQueue(channel);
+        if (!queueAlreadyRegistered) {
+          const setupWorkerQueue = defineSetupWorkerQueue(
+            queueName,
+            taskList,
+            onSuccess,
+            onFailure,
+            registerQueue
+          );
+
+          await setupWorkerQueue(channel);
+          jobRegistryCache.add(queueName);
+        }
       })
     );
 
@@ -83,7 +95,7 @@ function defineSetupMetaQueue(
   };
 }
 
-async function setupAssembleQueue(channel: ConfirmChannel) {
+async function setupAssembleExchange(channel: ConfirmChannel) {
   await channel.assertExchange(ASSEMBLE_EXCHANGE, 'direct');
 }
 
@@ -96,6 +108,7 @@ function createRunner(
 ) {
   // Create a new connection manager
   const connection = connect([amqpConnectionString]);
+  const jobRegistryCache = new Set<string>();
 
   function getChannelWrapper() {
     return channelWrapper;
@@ -106,12 +119,13 @@ function createRunner(
     taskList,
     onSuccess,
     onFailure,
-    registerQueue
+    registerQueue,
+    jobRegistryCache
   );
 
   const channelWrapper = connection.createChannel({
     setup: async channel => {
-      await setupAssembleQueue(channel);
+      await setupAssembleExchange(channel);
       await setupMetaQueue(channel);
     }
   });

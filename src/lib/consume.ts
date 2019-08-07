@@ -9,7 +9,7 @@ export function defineConsumer(
   onSuccess: SuccessFn,
   onFailure: FailureFn
 ) {
-  const log = debug(`consumer:${queueName}`);
+  const log = debug(`assemble-worker:${queueName}`);
 
   return async function consumer(msg: Message) {
     const payloadString = msg.content.toString();

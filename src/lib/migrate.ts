@@ -1,5 +1,8 @@
 import { PoolClient } from 'pg';
+import debug from 'debug';
 import { readdirSync, readFileSync } from 'fs';
+
+const log = debug('assemble-worker:migrate');
 
 async function installSchema(client: PoolClient) {
   await client.query(`
@@ -54,12 +57,16 @@ export async function migrate(client: PoolClient) {
     .filter(f => f.match(/^[0-9]{6}\.sql$/))
     .sort();
 
+  log('Running migrations %j', migrationFiles);
+
   for (const migrationFile of migrationFiles) {
     const migrationNumber = parseInt(migrationFile.substr(0, 6), 10);
     if (latestMigration == null || migrationNumber > latestMigration) {
       await runMigration(client, migrationFile, migrationNumber);
     }
   }
+
+  log('Successfully ran migrations');
 }
 
 export async function reset(client: PoolClient) {

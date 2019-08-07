@@ -1,6 +1,6 @@
 {
   "name": "assemble-worker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "NodeJS / PostgreSQL / RabbitMQ worker library",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
@@ -13,6 +13,8 @@
     "build": "run-s clean && run-p build:*",
     "build:main": "tsc -p tsconfig.json",
     "build:module": "tsc -p tsconfig.module.json",
+    "build:main-sql": "mkdir -p ./build/main/sql && cp ./src/sql/*.sql ./build/main/sql/",
+    "build:module-sql": "mkdir -p ./build/module/sql && cp ./src/sql/*.sql ./build/module/sql/",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",

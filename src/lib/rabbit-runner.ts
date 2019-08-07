@@ -1,8 +1,11 @@
 import { ConfirmChannel, Message } from 'amqplib';
 import { connect, ChannelWrapper } from 'amqp-connection-manager';
 import { times } from 'lodash';
+import debug from 'debug';
 import { defineConsumer } from './consume';
 import { TaskList, SuccessFn, FailureFn, CreateQueueFn } from './interfaces';
+
+const log = debug('assemble-worker:rabbit');
 
 export const ASSEMBLE_EXCHANGE = 'assemble_worker';
 export const META_QUEUE = 'meta-queue';
@@ -25,6 +28,8 @@ function defineSetupWorkerQueue(
     await channel.prefetch(1);
     await channel.assertQueue(queueName, { durable: true });
     await channel.bindQueue(queueName, ASSEMBLE_EXCHANGE, queueName);
+    log('Set up queue: %s', queueName);
+
     await registerQueue(queueName);
 
     const consumer = defineConsumer(
@@ -127,7 +132,9 @@ function createRunner(
   const channelWrapper = connection.createChannel({
     setup: async channel => {
       await setupAssembleExchange(channel);
+      log('Set up exhange: assemble');
       await setupMetaQueue(channel);
+      log('Set up exchange: meta');
     }
   });
 

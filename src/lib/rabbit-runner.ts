@@ -114,6 +114,15 @@ function createRunner(
 ) {
   // Create a new connection manager
   const connection = connect([amqpConnectionString]);
+
+  connection.on('connect', info => {
+    log('Got connection at %s: %j', info.url, info.connection);
+  });
+
+  connection.on('disconnect', info => {
+    log('Disconnected from rabbit, got error:', info.err);
+  });
+
   const jobRegistryCache = new Set<string>();
 
   function getChannelWrapper() {

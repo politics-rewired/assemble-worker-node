@@ -1,6 +1,6 @@
 {
   "name": "assemble-worker",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "NodeJS / PostgreSQL / RabbitMQ worker library",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",

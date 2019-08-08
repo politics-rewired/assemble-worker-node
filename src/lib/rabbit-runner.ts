@@ -25,7 +25,6 @@ function defineSetupWorkerQueue(
       return; // todo - logging
     }
 
-    await channel.prefetch(1);
     await channel.assertQueue(queueName, { durable: true });
     await channel.bindQueue(queueName, ASSEMBLE_EXCHANGE, queueName);
     log('Set up queue: %s', queueName);

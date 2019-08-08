@@ -11,6 +11,8 @@ export const ASSEMBLE_EXCHANGE = 'assemble_worker';
 export const META_QUEUE = 'meta-queue';
 export const TEST_WORKER_QUEUES = ['trivial-success', 'trivial-failure'];
 
+const MAX_CONCURRENCY = 100;
+
 function defineSetupWorkerQueue(
   queueName: string,
   taskList: TaskList,
@@ -39,7 +41,7 @@ function defineSetupWorkerQueue(
       onFailure
     );
 
-    times(Math.max(task.concurrency, 1), () => {
+    times(Math.min(MAX_CONCURRENCY, Math.max(task.concurrency, 1)), () => {
       channel.consume(queueName, consumer, { noAck: false });
     });
   };

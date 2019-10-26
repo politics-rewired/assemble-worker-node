@@ -1,6 +1,5 @@
 import { ConfirmChannel, Message } from 'amqplib';
 import { connect, ChannelWrapper } from 'amqp-connection-manager';
-import { times } from 'lodash';
 import debug from 'debug';
 import { defineConsumer } from './consume';
 import { TaskList, SuccessFn, FailureFn, CreateQueueFn } from './interfaces';

@@ -13,21 +13,20 @@ export function defineConsumer(
 
   return async function consumer(msg: Message) {
     const payloadString = msg.content.toString();
-    log('Got payload string: %s', payloadString);
+    // log('Got payload string: %s', payloadString);
 
     const jobString = payloadString.replace(queueName + '|', '');
 
     let payload;
     try {
       payload = JSON.parse(jobString);
-      log('Got %j', payload);
+      // log('Got %j', payload);
     } catch (ex) {
       payload = jobString;
     }
 
-    log('Running job %j', job);
-
     try {
+      log('Running job %s: %s', job.name, payload.job_id);
       await job(payload);
       log('Job Succeeded');
       await onSuccess(payload.job_id);
@@ -38,6 +37,7 @@ export function defineConsumer(
       log('Successfully failed job %s', payload.job_id);
     } finally {
       channel.ack(msg);
+      log('Successfully acked %s', payload.job_id);
     }
   };
 }

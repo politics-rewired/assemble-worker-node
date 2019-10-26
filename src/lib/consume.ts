@@ -32,11 +32,11 @@ export function defineConsumer(
       log('Job Succeeded');
       await onSuccess(payload.job_id);
       log('Successfully succeeded %s', payload.job_id);
-      channel.ack(msg);
     } catch (error) {
       log('Job failed: %j', error);
       await onFailure(payload.job_id, error.toString());
       log('Successfully failed job %s', payload.job_id);
+    } finally {
       channel.ack(msg);
     }
   };

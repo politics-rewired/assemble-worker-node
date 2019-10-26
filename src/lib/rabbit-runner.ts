@@ -11,7 +11,7 @@ export const ASSEMBLE_EXCHANGE = 'assemble_worker';
 export const META_QUEUE = 'meta-queue';
 export const TEST_WORKER_QUEUES = ['trivial-success', 'trivial-failure'];
 
-const MAX_CONCURRENCY = 1;
+const MAX_CONCURRENCY = 10;
 
 function defineSetupWorkerQueue(
   queueName: string,
@@ -27,10 +27,15 @@ function defineSetupWorkerQueue(
       return; // todo - logging
     }
 
-    await channel.prefetch(MAX_CONCURRENCY);
+    const concurrency = Math.min(
+      MAX_CONCURRENCY,
+      Math.max(task.concurrency, 1)
+    );
+
+    await channel.prefetch(concurrency);
     await channel.assertQueue(queueName, { durable: true });
     await channel.bindQueue(queueName, ASSEMBLE_EXCHANGE, queueName);
-    log('Set up queue: %s', queueName);
+    log('Set up queue: %s with concurrency: %d', queueName, concurrency);
 
     await registerQueue(queueName);
 
@@ -42,9 +47,7 @@ function defineSetupWorkerQueue(
       onFailure
     );
 
-    times(Math.min(MAX_CONCURRENCY, Math.max(task.concurrency, 1)), () => {
-      channel.consume(queueName, consumer, { noAck: false });
-    });
+    channel.consume(queueName, consumer, { noAck: false });
   };
 }
 

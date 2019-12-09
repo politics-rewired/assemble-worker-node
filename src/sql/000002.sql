@@ -45,7 +45,7 @@ $$ language plpgsql;
 create or replace function assemble_worker.notify_job(job_id bigint) returns assemble_worker.jobs as $$
 declare
   v_job assemble_worker.jobs;
-  v_job_id bigint;
+  v_job_body json;
 begin
   select * from assemble_worker.jobs into v_job;
   select (json_build_object('job_id', v_job.id)::jsonb || v_job.payload::jsonb)::json into v_job_body;
@@ -57,19 +57,19 @@ $$ language plpgsql;
 create or replace function assemble_worker.renotify_unacked_jobs_queued_for_more_than_30_seconds() returns void as $$
 declare
   v_job_id record;
-begin;
-  for v_job in
+begin
+  for v_job_id in
     select id
     from assemble_worker.jobs
-    where last_acked_at = null
+    where last_acked_at is null
       and status = 'running'
       and (
         ( run_at is null and created_at < now() - interval '30 seconds' )
         or
-        ( run_at < now() - interal '30 seconds' )
+        ( run_at < now() - interval '30 seconds' )
       )
   loop
-    perform assemble_worker.notify_job(job_id bigint);
+    perform assemble_worker.notify_job(v_job_id);
   end loop;
 end;
 $$ language plpgsql;

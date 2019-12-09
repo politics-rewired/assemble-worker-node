@@ -57,11 +57,12 @@ export async function migrate(client: PoolClient) {
     .filter(f => f.match(/^[0-9]{6}\.sql$/))
     .sort();
 
-  log('Running migrations %j', migrationFiles);
+  log('Found migrations %j', migrationFiles);
 
   for (const migrationFile of migrationFiles) {
     const migrationNumber = parseInt(migrationFile.substr(0, 6), 10);
     if (latestMigration == null || migrationNumber > latestMigration) {
+      log('Running migration %d', migrationNumber);
       await runMigration(client, migrationFile, migrationNumber);
     }
   }

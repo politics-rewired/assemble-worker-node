@@ -1,5 +1,9 @@
 # assemble-worker
 
+## Note
+
+In order for integration tests to pass, `pg-amqp-bridge-node` must be running.
+
 ## Introduction
 
 This is a Node.js/PostgreSQL/RabbitMQ worker heavily influence by [@benjie](https://github.com/benjie)'s [graphile/worker](#).

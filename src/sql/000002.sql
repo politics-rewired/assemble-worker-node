@@ -47,31 +47,29 @@ declare
   v_job assemble_worker.jobs;
   v_job_body json;
 begin
-  select * from assemble_worker.jobs into v_job;
+  select * from assemble_worker.jobs where id = job_id into v_job;
   select (json_build_object('job_id', v_job.id)::jsonb || v_job.payload::jsonb)::json into v_job_body;
   perform assemble_worker.send_message(v_job.queue_name, v_job_body::text);
   return v_job;
 end;
 $$ language plpgsql;
 
-create or replace function assemble_worker.renotify_unacked_jobs_queued_for_more_than_30_seconds() returns void as $$
+create or replace procedure assemble_worker.renotify_unacked_jobs_queued_for_more_than_30_seconds()
+language plpgsql
+as $$
 declare
-  v_job_id record;
+  v_job record;
 begin
-  for v_job_id in
-    select id
-    from assemble_worker.jobs
-    where last_acked_at is null
-      and status = 'running'
-      and (
-        ( run_at is null and created_at < now() - interval '30 seconds' )
-        or
-        ( run_at < now() - interval '30 seconds' )
-      )
-  loop
-    perform assemble_worker.notify_job(v_job_id);
-  end loop;
+  perform assemble_worker.notify_job(id)
+  from assemble_worker.jobs
+  where last_acked_at is null
+    and status = 'running'
+    and (
+      ( run_at is null and created_at < now() - interval '30 seconds' )
+      or
+      ( run_at < now() - interval '30 seconds' )
+    );
 end;
-$$ language plpgsql;
+$$;
 
 COMMIT;

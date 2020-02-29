@@ -67,6 +67,12 @@ create table assemble_worker.jobs (
   created_at timestamp not null default now()
 );
 
+create table assemble_worker.poking_rights (
+  n integer
+);
+
+insert into assemble_worker.poking_rights ( n ) values ( 1 );
+
 create table assemble_worker.pokes (
   poked_at timestamp not null
 );
@@ -231,11 +237,22 @@ $$ language plpgsql;
 
 create function assemble_worker.poke() returns integer as $$
 declare
+  v_has_poking_rights integer;
   v_last_poke timestamp;
   v_new_poke timestamp;
   v_maybe_new_poke timestamp;
   v_updated_count integer;
 begin
+  select n
+  from assemble_worker.poking_rights
+  for update
+  skip locked
+  into v_has_poking_rights;
+
+  if v_has_poking_rights is null then
+    return 0;
+  end if;
+
   select poked_at
   from assemble_worker.pokes
   order by poked_at desc 
@@ -257,6 +274,8 @@ begin
     returning 1
   )
   select count(*) from ran_jobs into v_updated_count;
+
+  delete from assemble_worker.pokes;
 
   insert into assemble_worker.pokes (poked_at) values (v_new_poke);
   return v_updated_count;

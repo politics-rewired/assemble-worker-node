@@ -7,7 +7,12 @@
   "module": "build/module/index.js",
   "repository": "https://github.com/ben-pr-p/assemble-worker",
   "license": "MIT",
-  "keywords": ["worker", "nodejs", "postgresql", "rabbitmq"],
+  "keywords": [
+    "worker",
+    "nodejs",
+    "postgresql",
+    "rabbitmq"
+  ],
   "scripts": {
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
@@ -52,23 +57,25 @@
     "node": ">=8.9"
   },
   "dependencies": {
-    "@types/amqp-connection-manager": "^2.0.4",
-    "@types/amqplib": "^0.5.13",
     "amqp-connection-manager": "^3.0.0",
     "amqplib": "^0.5.5",
     "debug": "^4.1.1",
     "lodash": "^4.17.15",
-    "pg": "^7.12.0",
+    "pg": "^7.18.2",
     "sha.js": "^2.4.11"
   },
   "devDependencies": {
+    "@babel/types": "^7.8.6",
     "@bitjson/npm-scripts-info": "^1.0.0",
+    "@types/amqp-connection-manager": "^2.0.8",
+    "@types/amqplib": "^0.5.13",
     "@types/debug": "^4.1.4",
     "@types/jest": "^24.0.16",
     "@types/lodash": "^4.14.136",
     "@types/node": "^12.6.8",
-    "@types/pg": "^7.4.14",
+    "@types/pg": "^7.14.1",
     "codecov": "^3.5.0",
+    "csstype": "^2.6.9",
     "cz-conventional-changelog": "^2.1.0",
     "gh-pages": "^2.0.1",
     "jest": "^24.8.0",
@@ -80,7 +87,7 @@
     "ts-node": "^8.3.0",
     "tslint": "^5.18.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.8.3"
   },
   "config": {
     "commitizen": {

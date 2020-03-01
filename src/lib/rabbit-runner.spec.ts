@@ -19,6 +19,8 @@ describe('rabbit interaction', () => {
       {},
       async function() {},
       async function() {},
+      async function() {},
+      async function() {},
       async function() {}
     );
 
@@ -80,6 +82,8 @@ describe('rabbit interaction', () => {
       { [jobName]: { concurrency: 1, task: { one: triviallySuccessfulJob } } },
       onSuccess,
       async function() {},
+      async function() {},
+      async function() {},
       async function() {}
     );
 
@@ -107,6 +111,8 @@ describe('rabbit interaction', () => {
       { [jobName]: { concurrency: 1, task: { one: triviallyFailingJob } } },
       async function() {},
       onFailure,
+      async function() {},
+      async function() {},
       async function() {}
     );
 

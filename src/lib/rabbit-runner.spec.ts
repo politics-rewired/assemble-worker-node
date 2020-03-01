@@ -77,7 +77,7 @@ describe('rabbit interaction', () => {
 
     const { channelWrapper } = await createRunner(
       'amqp://localhost',
-      { [jobName]: { concurrency: 1, task: triviallySuccessfulJob } },
+      { [jobName]: { concurrency: 1, task: { one: triviallySuccessfulJob } } },
       onSuccess,
       async function() {},
       async function() {}
@@ -104,7 +104,7 @@ describe('rabbit interaction', () => {
 
     const { channelWrapper } = await createRunner(
       'amqp://localhost',
-      { [jobName]: { concurrency: 1, task: triviallyFailingJob } },
+      { [jobName]: { concurrency: 1, task: { one: triviallyFailingJob } } },
       async function() {},
       onFailure,
       async function() {}

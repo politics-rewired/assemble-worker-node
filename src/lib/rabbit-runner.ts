@@ -2,7 +2,14 @@ import { ConfirmChannel, Message } from 'amqplib';
 import { connect, ChannelWrapper } from 'amqp-connection-manager';
 import debug from 'debug';
 import { defineConsumer } from './consume';
-import { TaskList, SuccessFn, FailureFn, CreateQueueFn } from './interfaces';
+import {
+  TaskList,
+  SuccessFn,
+  FailureFn,
+  SuccessManyFn,
+  FailureManyFn,
+  CreateQueueFn
+} from './interfaces';
 
 const log = debug('assemble-worker:rabbit');
 
@@ -17,6 +24,8 @@ function defineSetupWorkerQueue(
   taskList: TaskList,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
+  onSuccessMany: SuccessManyFn,
+  onFailureMany: FailureManyFn,
   registerQueue: CreateQueueFn
 ) {
   return async function(channel: ConfirmChannel) {
@@ -43,7 +52,9 @@ function defineSetupWorkerQueue(
       queueName,
       task.task,
       onSuccess,
-      onFailure
+      onFailure,
+      onSuccessMany,
+      onFailureMany
     );
 
     channel.consume(queueName, consumer, { noAck: false });
@@ -55,6 +66,8 @@ function defineSetupMetaQueue(
   taskList: TaskList,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
+  onSuccessMany: SuccessManyFn,
+  onFailureMany: FailureManyFn,
   registerQueue: CreateQueueFn,
   jobRegistryCache: Set<string>
 ) {
@@ -73,6 +86,8 @@ function defineSetupMetaQueue(
             taskList,
             onSuccess,
             onFailure,
+            onSuccessMany,
+            onFailureMany,
             registerQueue
           );
 
@@ -93,6 +108,8 @@ function defineSetupMetaQueue(
         taskList,
         onSuccess,
         onFailure,
+        onSuccessMany,
+        onFailureMany,
         registerQueue
       );
 
@@ -114,6 +131,8 @@ function createRunner(
   taskList: TaskList,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
+  onSuccessMany: SuccessManyFn,
+  onFailureMany: FailureManyFn,
   registerQueue: CreateQueueFn
 ) {
   // Create a new connection manager
@@ -138,6 +157,8 @@ function createRunner(
     taskList,
     onSuccess,
     onFailure,
+    onSuccessMany,
+    onFailureMany,
     registerQueue,
     jobRegistryCache
   );

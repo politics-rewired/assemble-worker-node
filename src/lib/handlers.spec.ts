@@ -15,7 +15,12 @@ describe('handlers', () => {
   });
 
   // const { onSuccess, onFaiure, poke } = makePgFunctions(pool);
-  const { onSuccess, onFailure } = makePgFunctions(pool);
+  const {
+    onSuccess,
+    onFailure,
+    onSuccessMany,
+    onFailureMany
+  } = makePgFunctions(pool);
 
   test('complete job deletes a job', async () => {
     const client = await pool.connect();
@@ -33,6 +38,38 @@ describe('handlers', () => {
     const { rows: matchingRows } = await client.query(
       'select * from assemble_worker.jobs where id = $1',
       [row.id]
+    );
+
+    expect(Array.isArray(matchingRows)).toBe(true);
+    expect(matchingRows).toHaveLength(0);
+
+    await client.query(ENABLE_TRIGGERS);
+    await client.release();
+  });
+
+  test('complete many job deletes a job', async () => {
+    const client = await pool.connect();
+    await client.query(DISABLE_TRIGGERS);
+
+    const {
+      rows: [jobOne]
+    } = await client.query(
+      `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
+      [DUMMY_QUEUE, DUMMY_PAYLOAD]
+    );
+
+    const {
+      rows: [jobTwo]
+    } = await client.query(
+      `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
+      [DUMMY_QUEUE, DUMMY_PAYLOAD]
+    );
+
+    await onSuccessMany([jobOne.id, jobTwo.id]);
+
+    const { rows: matchingRows } = await client.query(
+      'select * from assemble_worker.jobs where id = ANY($1)',
+      [[jobOne.id, jobTwo.id]]
     );
 
     expect(Array.isArray(matchingRows)).toBe(true);
@@ -77,36 +114,56 @@ describe('handlers', () => {
     await client.release();
   });
 
-  test('fail job requeues the job', async () => {
+  test('fail many job requeues the jobs', async () => {
     const client = await pool.connect();
     await client.query(DISABLE_TRIGGERS);
 
     const {
-      rows: [row]
+      rows: [jobOne]
     } = await client.query(
       `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
       [DUMMY_QUEUE, DUMMY_PAYLOAD]
     );
 
-    await onFailure(row.id, TEST_ERROR);
+    const {
+      rows: [jobTwo]
+    } = await client.query(
+      `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
+      [DUMMY_QUEUE, DUMMY_PAYLOAD]
+    );
+
+    const failures = await onFailureMany(
+      [jobOne.id, jobTwo.id],
+      [TEST_ERROR, TEST_ERROR]
+    );
 
     const { rows: matchingRows } = await client.query(
-      'select * from assemble_worker.jobs where id = $1',
-      [row.id]
+      'select * from assemble_worker.jobs where id = ANY($1)',
+      [[jobOne.id, jobTwo.id]]
     );
 
     expect(Array.isArray(matchingRows)).toBe(true);
-    expect(matchingRows).toHaveLength(1);
+    expect(matchingRows).toHaveLength(2);
 
-    const failedJob = matchingRows[0];
-    expect(failedJob).toHaveProperty('ran_at');
-    expect(failedJob.ran_at).toHaveLength(1);
-    expect(failedJob).toHaveProperty('errors');
-    expect(failedJob.errors).toHaveLength(1);
-    expect(failedJob.errors[0]).toBe(TEST_ERROR);
-    expect(failedJob).toHaveProperty('attempts');
-    expect(failedJob.attempts).toBe(1);
-    expect(failedJob).toHaveProperty('run_at');
+    const failedJobOne = matchingRows[0];
+    expect(failedJobOne).toHaveProperty('ran_at');
+    expect(failedJobOne.ran_at).toHaveLength(1);
+    expect(failedJobOne).toHaveProperty('errors');
+    expect(failedJobOne.errors).toHaveLength(1);
+    expect(failedJobOne.errors[0]).toBe(TEST_ERROR);
+    expect(failedJobOne).toHaveProperty('attempts');
+    expect(failedJobOne.attempts).toBe(1);
+    expect(failedJobOne).toHaveProperty('run_at');
+
+    const failedJobTwo = matchingRows[1];
+    expect(failedJobTwo).toHaveProperty('ran_at');
+    expect(failedJobTwo.ran_at).toHaveLength(1);
+    expect(failedJobTwo).toHaveProperty('errors');
+    expect(failedJobTwo.errors).toHaveLength(1);
+    expect(failedJobTwo.errors[0]).toBe(TEST_ERROR);
+    expect(failedJobTwo).toHaveProperty('attempts');
+    expect(failedJobTwo.attempts).toBe(1);
+    expect(failedJobTwo).toHaveProperty('run_at');
 
     await client.query(ENABLE_TRIGGERS);
     await client.release();

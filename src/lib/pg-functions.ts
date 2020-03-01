@@ -18,6 +18,18 @@ export function makePgFunctions(pool: Pool) {
   };
 
   /**
+   * Runs assemble_worker.complete_many_jobs()
+   * @param jobIds array of jobIds to succeed
+   * @param client optional postgres client if session matters
+   */
+  const onSuccessMany = async (jobIds: number[], client?: PoolClient) => {
+    return await (client || pool).query(
+      'select assemble_worker.complete_many_jobs($1)',
+      [jobIds]
+    );
+  };
+
+  /**
    * Runs assemble_worker.fail_job()
    * @param jobId jobId to fail
    * @param error indicated error message
@@ -31,6 +43,23 @@ export function makePgFunctions(pool: Pool) {
     return await (client || pool).query(
       'select assemble_worker.fail_job($1, $2)',
       [jobId, error]
+    );
+  };
+
+  /**
+   * Runs assemble_worker.fail_many_jobs()
+   * @param jobIds array of jobIds to fail
+   * @param errors array of error messages
+   * @param client optional postgres client if session matters
+   */
+  const onFailureMany = async (
+    jobIds: number[],
+    errors: string[],
+    client?: PoolClient
+  ) => {
+    return await (client || pool).query(
+      'select assemble_worker.fail_many_jobs($1, $2)',
+      [jobIds, errors]
     );
   };
 
@@ -72,5 +101,13 @@ export function makePgFunctions(pool: Pool) {
     );
   };
 
-  return { onSuccess, onFailure, poke, addJob, registerQueue };
+  return {
+    onSuccess,
+    onFailure,
+    poke,
+    addJob,
+    registerQueue,
+    onSuccessMany,
+    onFailureMany
+  };
 }

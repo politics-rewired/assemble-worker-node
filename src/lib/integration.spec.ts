@@ -17,6 +17,10 @@ const DUMMY_SUCCEEDING_JOB = async () => {
   return null;
 };
 
+const DUMMY_SUCCEEDING_MANY_JOB = async arr => {
+  return arr.slice();
+};
+
 const DUMMY_FAILING_JOB = async () => {
   throw new Error("I'm a failure");
 };
@@ -34,8 +38,10 @@ describe('integration tests', () => {
 
     const runner = await createRunner(
       config.amqpConnectionString,
-      { [JOB_NAME]: { concurrency: 1, task: DUMMY_SUCCEEDING_JOB } },
+      { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_SUCCEEDING_JOB } } },
       onSuccess,
+      async function() {},
+      async function() {},
       async function() {},
       registerQueue
     );
@@ -53,8 +59,10 @@ describe('integration tests', () => {
 
     const runner = await createRunner(
       config.amqpConnectionString,
-      { [JOB_NAME]: { concurrency: 1, task: DUMMY_SUCCEEDING_JOB } },
+      { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_SUCCEEDING_JOB } } },
       onSuccess,
+      async function() {},
+      async function() {},
       async function() {},
       registerQueue
     );
@@ -85,9 +93,11 @@ describe('integration tests', () => {
 
     const runner = await createRunner(
       config.amqpConnectionString,
-      { [JOB_NAME]: { concurrency: 1, task: DUMMY_FAILING_JOB } },
+      { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_FAILING_JOB } } },
       async function() {},
       onFailure,
+      async function() {},
+      async function() {},
       registerQueue
     );
 
@@ -110,5 +120,38 @@ describe('integration tests', () => {
     expect(failedJob.status).toBe('waiting to retry');
 
     await runner.stop();
+  });
+
+  test('add_job runs batch successfully', async () => {
+    const JOB_NAME = 'add-job-runs-job';
+    const onSuccess = jest.fn();
+    const onSuccessMany = jest.fn();
+
+    const runner = await createRunner(
+      config.amqpConnectionString,
+      {
+        [JOB_NAME]: {
+          concurrency: 1,
+          task: {
+            one: DUMMY_SUCCEEDING_JOB,
+            many: DUMMY_SUCCEEDING_MANY_JOB,
+            limit: 5
+          }
+        }
+      },
+      onSuccess,
+      async function() {},
+      async function() {},
+      onSuccessMany,
+      registerQueue
+    );
+
+    await addJob({ queueName: JOB_NAME, payload: DUMMY_PAYLOAD() });
+    await addJob({ queueName: JOB_NAME, payload: DUMMY_PAYLOAD() });
+    await sleep(SLEEP_TIME);
+
+    await runner.stop();
+    expect(onSuccess).toHaveBeenCalledTimes(0);
+    expect(onSuccessMany).toHaveBeenCalledTimes(1);
   });
 });

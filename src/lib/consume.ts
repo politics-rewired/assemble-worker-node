@@ -4,8 +4,7 @@ import {
   FailureFn,
   SuccessManyFn,
   FailureManyFn,
-  Task,
-  JobPayload
+  Task
 } from './interfaces';
 import debug from 'debug';
 import { createBucketBatcher } from './bucket-batcher';

@@ -20,7 +20,11 @@ export function defineConsumer(
 ) {
   const log = debug(`assemble-worker:${queueName}`);
 
-  if (!job.many) {
+  const useSingle = !job.many;
+
+  log('Launching mode for %s: %s', queueName, useSingle ? 'SINGLE' : 'MANY');
+
+  if (useSingle) {
     return async function consumer(msg: Message) {
       const payloadString = msg.content.toString();
       // log('Got payload string: %s', payloadString);
@@ -62,6 +66,12 @@ export function defineConsumer(
 
       const payloads = messages.map(msg => getPayloadFromMsg(msg, queueName));
 
+      log(
+        'Running many jobs %s: %j',
+        job.one.name,
+        payloads.map(j => j.job_id)
+      );
+
       const results = await job.many(payloads);
 
       messages.forEach(msg => channel.ack(msg));
@@ -69,10 +79,12 @@ export function defineConsumer(
       results.forEach((tuple, idx) => {
         const [ok, result] = tuple;
         if (ok) {
+          log('Successfully succeeded %s', payloads[idx].job_id);
           successes.push(payloads[idx].job_id);
         } else {
           failureIds.push(payloads[idx].job_id);
           failureErrors.push(result);
+          log('Successfully failed %s', payloads[idx].job_id);
         }
       });
 

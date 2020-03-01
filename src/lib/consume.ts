@@ -53,22 +53,26 @@ export function defineConsumer(
     };
   }
 
-  const bucketBatcher = createBucketBatcher<JobPayload>({
+  const bucketBatcher = createBucketBatcher<Message>({
     bucketSize: job.limit,
     maxFlushInterval: 50,
-    handleBatch: async (payloads: JobPayload[]) => {
+    handleBatch: async (messages: Message[]) => {
       const successes = [];
       const failureIds = [];
       const failureErrors = [];
 
+      const payloads = messages.map(msg => getPayloadFromMsg(msg, queueName));
+
       const results = await job.many(payloads);
+
+      messages.forEach(msg => channel.ack(msg));
 
       results.forEach((tuple, idx) => {
         const [ok, result] = tuple;
         if (ok) {
-          successes.push(payloads[idx].id);
+          successes.push(payloads[idx].job_id);
         } else {
-          failureIds.push(payloads[idx].id);
+          failureIds.push(payloads[idx].job_id);
           failureErrors.push(result);
         }
       });
@@ -81,19 +85,24 @@ export function defineConsumer(
   });
 
   return async function consumer(msg: Message) {
-    const payloadString = msg.content.toString();
-    // log('Got payload string: %s', payloadString);
-
-    const jobString = payloadString.replace(queueName + '|', '');
-
-    let payload;
-    try {
-      payload = JSON.parse(jobString);
-      // log('Got %j', payload);
-    } catch (ex) {
-      payload = jobString;
-    }
-
-    bucketBatcher.push(payload);
+    bucketBatcher.push(msg);
   };
 }
+
+const getPayloadFromMsg = (msg: Message, queueName: string) => {
+  const payloadString = msg.content.toString();
+  // log('Got payload string: %s', payloadString);
+
+  const jobString = payloadString.replace(queueName + '|', '');
+
+  let payload;
+
+  try {
+    payload = JSON.parse(jobString);
+    // log('Got %j', payload);
+  } catch (ex) {
+    payload = jobString;
+  }
+
+  return payload;
+};

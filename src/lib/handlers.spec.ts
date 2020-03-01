@@ -132,10 +132,7 @@ describe('handlers', () => {
       [DUMMY_QUEUE, DUMMY_PAYLOAD]
     );
 
-    const failures = await onFailureMany(
-      [jobOne.id, jobTwo.id],
-      [TEST_ERROR, TEST_ERROR]
-    );
+    await onFailureMany([jobOne.id, jobTwo.id], [TEST_ERROR, TEST_ERROR]);
 
     const { rows: matchingRows } = await client.query(
       'select * from assemble_worker.jobs where id = ANY($1)',

@@ -8,6 +8,17 @@ export type FailureFn = (
   client?: PoolClient
 ) => Promise<any>;
 
+export type SuccessManyFn = (
+  jobIds: number[],
+  client?: PoolClient
+) => Promise<any>;
+
+export type FailureManyFn = (
+  jobIds: number[],
+  errors: string[],
+  client?: PoolClient
+) => Promise<any>;
+
 export type CreateQueueFn = (
   queueName: string,
   client?: PoolClient
@@ -18,7 +29,13 @@ export interface JobPayload {
   [key: string]: any;
 }
 
-export type Task = (payload: JobPayload) => Promise<any>;
+type ManyResultTuple = [boolean, any];
+
+export type Task = {
+  one: (payload: JobPayload) => Promise<any>;
+  many?: (payloads: JobPayload[]) => Promise<ManyResultTuple[]>;
+  limit?: number;
+};
 
 export type TaskList = {
   [key: string]: {

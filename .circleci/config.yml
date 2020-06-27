@@ -10,10 +10,9 @@ jobs:
       - image: circleci/node:12.18.1
         environment:
           BASE_URL: 'localhost:3000'
-          DATABASE_URL: postgres://postgres:postgres@localhost/assemble_worker_test
-          PGUSER: postgres
-          PGDATABASE: assemble_worker_test
-          AMQP_URL: amqp://guest:guest@localhost
+          TEST_AMQP_URI: amqp://guest:guest@localhost
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost/assemble_worker_test
+          TEST_MIGRATION_DATABASE_URL: postgres://postgres:postgres@localhost/assemble_worker_migration_test
       # Postgres
       - image: circleci/postgres:12.1-alpine
         environment:

@@ -58,6 +58,7 @@
   "dependencies": {
     "amqp-connection-manager": "^3.0.0",
     "amqplib": "^0.5.5",
+    "envalid": "^6.0.2",
     "lodash": "^4.17.15",
     "pg": "^7.18.2",
     "sha.js": "^2.4.11"

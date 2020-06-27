@@ -10,7 +10,7 @@ import { withClient } from '../src/utils';
 import { Pool } from 'pg';
 
 export default async function() {
-  const connection = await connect('amqp://localhost');
+  const connection = await connect(config.amqpConnectionString);
   const channel = await connection.createChannel();
   await channel.assertExchange(ASSEMBLE_EXCHANGE, 'direct');
 

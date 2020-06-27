@@ -1,48 +1,93 @@
-# https://circleci.com/docs/2.0/language-javascript/
 version: 2
+
 jobs:
-  'node-10':
+  test:
+    # https://circleci.com/docs/2.0/configuration-reference/#resource_class
+    resource_class: small
+
     docker:
-      - image: circleci/node:10
-    working_directory: ~/typescript-starter
+      # Main container
+      - image: circleci/node:12.18.1
+        environment:
+          BASE_URL: 'localhost:3000'
+          DATABASE_URL: postgres://postgres:postgres@localhost/assemble_worker_test
+          PGUSER: postgres
+          PGDATABASE: assemble_worker_test
+          AMQP_URL: amqp://guest:guest@localhost
+      # Postgres
+      - image: circleci/postgres:12.1-alpine
+        environment:
+          POSTGRES_DB: assemble_worker_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+      # RabbitMQ
+      - image: rabbitmq:3.8.5-alpine
+      # Bridge
+      - image: gcr.io/assemble-services/pg-amqp-bridge-node:8b3790e2b16b01d34e7be9254913d5347aedbc4b
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "waiting for postgres"
+            while ! nc -z localhost 5432; do
+              echo "sleeping 1s" && sleep 1
+            done
+            echo "waiting for rabbitmq"
+            while ! nc -z localhost 5672; do
+              echo "sleeping 1s" && sleep 1
+            done
+            node ./dist/index.js
+        environment:
+          # AMQP Bridge
+          BRIDGE_CHANNELS: assemble_worker:assemble_worker
+          DELIVERY_MODE: NON-PERSISTENT
+
+          # RabbitMQ
+          AMQP_URI: amqp://guest:guest@localhost
+
+          # Postgres
+          POSTGRESQL_URI: postgres://postgres:postgres@localhost/assemble_worker_test
+
+    working_directory: ~/assemble-worker
+
     steps:
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt install postgresql-client
+
       - checkout
-      # Download and cache dependencies
+
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "package.json" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
-      - run: npm install
+
+      - run: yarn install
+
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-      - run: npm test
-      - run: npm run cov:send
-      - run: npm run cov:check
-  'node-latest':
-    docker:
-      - image: circleci/node:latest
-    working_directory: ~/typescript-starter
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "package.json" }}
-            - v1-dependencies-
-      - run: npm install
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-      - run: npm test
-      - run: npm run cov:send
-      - run: npm run cov:check
+
+      - run:
+          name: Wait for Services
+          command: >-
+            dockerize -wait tcp://localhost:5432 -timeout 1m
+            dockerize -wait tcp://localhost:5672 -timeout 1m
+
+            # pg-amqp-bridge has no way to do a readiness check. We assume it becomes ready within a second of RabbitMQ
+            sleep 1
+
+      - run:
+          name: Create migration test database
+          command: psql $DATABASE_URL -c "create database assemble_worker_migration_test"
+
+      - run: yarn test
 
 workflows:
   version: 2
   build:
     jobs:
-      - 'node-10'
-      - 'node-latest'
+      - test

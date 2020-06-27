@@ -1,12 +1,17 @@
 import { connect } from 'amqplib';
 import config from '../src/lib/config';
-import { META_QUEUE, TEST_WORKER_QUEUES } from '../src/lib/rabbit-runner';
+import {
+  ASSEMBLE_EXCHANGE,
+  META_QUEUE,
+  TEST_WORKER_QUEUES
+} from '../src/lib/rabbit-runner';
 import { migrate, reset } from '../src/lib/migrate';
 import { Pool } from 'pg';
 
 export default async function() {
   const connection = await connect('amqp://localhost');
   const channel = await connection.createChannel();
+  await channel.assertExchange(ASSEMBLE_EXCHANGE, 'direct');
 
   const pool = new Pool({
     connectionString: config.testDatabaseConnectionString

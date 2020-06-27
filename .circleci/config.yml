@@ -84,7 +84,7 @@ jobs:
           name: Create migration test database
           command: psql $DATABASE_URL -c "create database assemble_worker_migration_test"
 
-      - run: yarn test
+      - run: yarn test --detectOpenHandles --forceExit
 
 workflows:
   version: 2

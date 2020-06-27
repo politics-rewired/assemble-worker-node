@@ -5,7 +5,7 @@ import {
   META_QUEUE,
   TEST_WORKER_QUEUES
 } from '../src/lib/rabbit-runner';
-import { migrate, reset } from '../src/lib/migrate';
+import { installSchema, migrate, reset } from '../src/lib/migrate';
 import { withClient } from '../src/utils';
 import { Pool } from 'pg';
 
@@ -20,6 +20,7 @@ export default async function() {
 
   await withClient(pool, async client => {
     await reset(client);
+    await installSchema(client);
     await migrate(client);
   });
   await pool.end();

@@ -4,12 +4,12 @@ import { readdirSync, readFileSync } from 'fs';
 
 const log = debug('assemble-worker:migrate');
 
-async function installSchema(client: PoolClient) {
+export async function installSchema(client: PoolClient) {
   await client.query(`
     create extension if not exists pgcrypto with schema public;
     create extension if not exists "uuid-ossp" with schema public;
-    create schema assemble_worker;
-    create table assemble_worker.migrations(
+    create schema if not exists assemble_worker;
+    create table if not exists assemble_worker.migrations(
       id int primary key,
       ts timestamptz default now() not null
     );

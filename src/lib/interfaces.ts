@@ -33,15 +33,15 @@ export interface JobPayload {
 
 type ManyResultTuple = [boolean, any];
 
-export type Task = {
+export interface Task {
   one: (payload: JobPayload) => Promise<any>;
   many?: (payloads: JobPayload[]) => Promise<ManyResultTuple[]>;
   limit?: number;
-};
+}
 
-export type TaskList = {
+export interface TaskList {
   [key: string]: {
     concurrency: number;
     task: Task;
   };
-};
+}

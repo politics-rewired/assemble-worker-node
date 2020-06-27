@@ -1,11 +1,10 @@
-import envalid from 'envalid';
-import { url } from 'envalid';
+import envalid, { url } from 'envalid';
 
-type AssembleWorkerGlobalConfig = {
+interface AssembleWorkerGlobalConfig {
   testDatabaseConnectionString: string;
   migrationTestDatabaseConnectionString: string;
   amqpConnectionString: string;
-};
+}
 
 const env = envalid.cleanEnv(process.env, {
   TEST_AMQP_URI: url({ default: undefined }),
@@ -14,13 +13,13 @@ const env = envalid.cleanEnv(process.env, {
 });
 
 const config: AssembleWorkerGlobalConfig = {
-  testDatabaseConnectionString: env.isTest
-    ? env.TEST_DATABASE_URL
-    : 'postgres://localhost:5432/assemble_worker_test',
+  amqpConnectionString: env.isTest ? env.TEST_AMQP_URI : 'amqp://localhost',
   migrationTestDatabaseConnectionString: env.isTest
     ? env.TEST_MIGRATION_DATABASE_URL
     : 'postgres://localhost:5432/assemble_worker_migration_test',
-  amqpConnectionString: env.isTest ? env.TEST_AMQP_URI : 'amqp://localhost'
+  testDatabaseConnectionString: env.isTest
+    ? env.TEST_DATABASE_URL
+    : 'postgres://localhost:5432/assemble_worker_test'
 };
 
 export default config;

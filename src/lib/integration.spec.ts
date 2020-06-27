@@ -1,11 +1,13 @@
+// tslint:disable:no-empty
+
 import { Pool } from 'pg';
 
 import config from './config';
 import {
-  makePgFunctions,
   AddJob,
-  Poke,
+  makePgFunctions,
   OnFailure,
+  Poke,
   RegisterQueue
 } from './pg-functions';
 import { createRunner } from './rabbit-runner';
@@ -60,9 +62,9 @@ describe('integration tests', () => {
       { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_SUCCEEDING_JOB } } },
       defaultLogger,
       onSuccess,
-      async function() {},
-      async function() {},
-      async function() {},
+      async () => {},
+      async () => {},
+      async () => {},
       registerQueue
     );
 
@@ -82,9 +84,9 @@ describe('integration tests', () => {
       { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_SUCCEEDING_JOB } } },
       defaultLogger,
       onSuccess,
-      async function() {},
-      async function() {},
-      async function() {},
+      async () => {},
+      async () => {},
+      async () => {},
       registerQueue
     );
 
@@ -92,8 +94,8 @@ describe('integration tests', () => {
     oneSecondAgo.setSeconds(oneSecondAgo.getSeconds() - 1);
 
     await addJob({
-      queueName: JOB_NAME,
       payload: DUMMY_PAYLOAD(),
+      queueName: JOB_NAME,
       runAt: oneSecondAgo
     });
 
@@ -116,15 +118,15 @@ describe('integration tests', () => {
       config.amqpConnectionString,
       { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_FAILING_JOB } } },
       defaultLogger,
-      async function() {},
+      async () => {},
       onFailure,
-      async function() {},
-      async function() {},
+      async () => {},
+      async () => {},
       registerQueue
     );
 
     const payload = DUMMY_PAYLOAD();
-    await addJob({ queueName: JOB_NAME, payload: payload });
+    await addJob({ queueName: JOB_NAME, payload });
 
     await sleep(SLEEP_TIME);
 
@@ -155,16 +157,16 @@ describe('integration tests', () => {
         [JOB_NAME]: {
           concurrency: 1,
           task: {
-            one: DUMMY_SUCCEEDING_JOB,
+            limit: 5,
             many: DUMMY_SUCCEEDING_MANY_JOB,
-            limit: 5
+            one: DUMMY_SUCCEEDING_JOB
           }
         }
       },
       defaultLogger,
       onSuccess,
-      async function() {},
-      async function() {},
+      async () => {},
+      async () => {},
       onSuccessMany,
       registerQueue
     );

@@ -1,16 +1,16 @@
+import { ChannelWrapper, connect } from 'amqp-connection-manager';
 import { ConfirmChannel, Message } from 'amqplib';
-import { connect, ChannelWrapper } from 'amqp-connection-manager';
 import { Logger } from 'winston';
 
 import { defineConsumer } from './consume';
 import {
-  TaskList,
-  SuccessFn,
-  FailureFn,
-  SuccessManyFn,
-  FailureManyFn,
   CreateQueueFn,
   DisconnectHandler,
+  FailureFn,
+  FailureManyFn,
+  SuccessFn,
+  SuccessManyFn,
+  TaskList
 } from './interfaces';
 
 export const ASSEMBLE_EXCHANGE = 'assemble_worker';
@@ -29,7 +29,7 @@ function defineSetupWorkerQueue(
   onFailureMany: FailureManyFn,
   registerQueue: CreateQueueFn
 ) {
-  return async function(channel: ConfirmChannel) {
+  return async (channel: ConfirmChannel) => {
     const task = taskList[queueName];
 
     if (!task) {
@@ -74,7 +74,7 @@ function defineSetupMetaQueue(
   registerQueue: CreateQueueFn,
   jobRegistryCache: Set<string>
 ) {
-  return async function(channel: ConfirmChannel) {
+  return async (channel: ConfirmChannel) => {
     await channel.assertQueue(META_QUEUE, { durable: true });
     await channel.bindQueue(META_QUEUE, ASSEMBLE_EXCHANGE, META_QUEUE);
 
@@ -106,7 +106,7 @@ function defineSetupMetaQueue(
         return;
       }
       const payloadString = msg.content.toString();
-      const newQueueName = payloadString.replace(META_QUEUE + '|', '');
+      const newQueueName = payloadString.replace(`${META_QUEUE}|`, '');
 
       const channelWrapper = getChannelWrapper();
 
@@ -143,7 +143,7 @@ function createRunner(
   onSuccessMany: SuccessManyFn,
   onFailureMany: FailureManyFn,
   registerQueue: CreateQueueFn,
-  onRabbitDisconnect?: DisconnectHandler,
+  onRabbitDisconnect?: DisconnectHandler
 ) {
   const rabbitLogger = logger.child({ component: 'rabbit' });
   // Create a new connection manager
@@ -156,7 +156,7 @@ function createRunner(
   connection.on('disconnect', info => {
     rabbitLogger.info(`Disconnected from rabbit, got error: `, info.err);
     if (typeof onRabbitDisconnect === 'function') {
-      onRabbitDisconnect(info.err)
+      onRabbitDisconnect(info.err);
     }
   });
 

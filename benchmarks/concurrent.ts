@@ -1,6 +1,9 @@
+// tslint:disable:no-console
+
+import { Pool } from 'pg';
+
 import { run } from '../src/index';
 import config from '../src/lib/config';
-import { Pool } from 'pg';
 
 const NUM_JOBS = 20000;
 
@@ -22,15 +25,17 @@ async function main() {
   }
 
   const worker = run({
-    pgPool: pool,
     amqpConnectionString: config.amqpConnectionString,
+    pgPool: pool,
     taskList: {
       'simple-task': {
         concurrency: 1000,
-        task: async function(payload) {
-          const n = payload.job_n;
-          if (n == NUM_JOBS) {
-            return finishTest();
+        task: {
+          one: async payload => {
+            const n = payload.job_n;
+            if (n === NUM_JOBS) {
+              return finishTest();
+            }
           }
         }
       }

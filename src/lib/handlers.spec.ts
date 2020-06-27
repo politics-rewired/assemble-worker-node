@@ -1,13 +1,13 @@
 import { Pool } from 'pg';
+import { withClient } from '../utils';
 import config from './config';
 import {
   makePgFunctions,
-  OnSuccess,
   OnFailure,
-  OnSuccessMany,
-  OnFailureMany
+  OnFailureMany,
+  OnSuccess,
+  OnSuccessMany
 } from './pg-functions';
-import { withClient } from '../utils';
 
 const DISABLE_TRIGGERS = 'SET session_replication_role = replica';
 const ENABLE_TRIGGERS = 'SET session_replication_role = DEFAULT';

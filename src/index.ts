@@ -1,15 +1,16 @@
-import { TaskList, DisconnectHandler } from './lib/interfaces';
+import { Pool } from 'pg';
+import { Logger } from 'winston';
+
+import { DisconnectHandler, TaskList } from './lib/interfaces';
 import { migrate } from './lib/migrate';
 import { makePgFunctions } from './lib/pg-functions';
 import { createRunner } from './lib/rabbit-runner';
 import { defaultLogger } from './lib/utils';
 import { withClient } from './utils';
-import { Pool } from 'pg';
-import { Logger } from 'winston';
 
 const DEFAULT_POKE_INTERVAL = 10 * 1000;
 
-type AssembleWorkerOptions = {
+interface AssembleWorkerOptions {
   databaseConnectionString?: string;
   pgPool?: Pool;
   amqpConnectionString: string;
@@ -18,7 +19,7 @@ type AssembleWorkerOptions = {
   skipAutoMigrate?: boolean;
   logger?: Logger;
   onRabbitDisconnect?: DisconnectHandler;
-};
+}
 
 export async function run(options: AssembleWorkerOptions) {
   const skipAutoMigrate = options.skipAutoMigrate || false;

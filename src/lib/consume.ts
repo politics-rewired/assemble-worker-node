@@ -1,15 +1,33 @@
 import { ConfirmChannel, Message } from 'amqplib';
 import { Logger } from 'winston';
 
-import { errToObj } from './utils';
+import { createBucketBatcher } from './bucket-batcher';
 import {
-  SuccessFn,
   FailureFn,
-  SuccessManyFn,
   FailureManyFn,
+  SuccessFn,
+  SuccessManyFn,
   Task
 } from './interfaces';
-import { createBucketBatcher } from './bucket-batcher';
+import { errToObj } from './utils';
+
+const getPayloadFromMsg = (
+  msg: Message,
+  queueName: string,
+  consumerLogger: Logger
+) => {
+  const payloadString = msg.content.toString();
+  const jobString = payloadString.replace(`${queueName}|`, '');
+
+  try {
+    return JSON.parse(jobString);
+  } catch (err) {
+    consumerLogger.error('Error parsing job payload', {
+      ...errToObj(err)
+    });
+    throw err;
+  }
+};
 
 export function defineConsumer(
   channel: ConfirmChannel,
@@ -29,31 +47,17 @@ export function defineConsumer(
     `Launching in ${useSingle ? 'SINGLE' : 'MANY'} mode for queue ${queueName}`
   );
 
-  const getPayloadFromMsg = (msg: Message) => {
-    const payloadString = msg.content.toString();
-    const jobString = payloadString.replace(`${queueName}|`, '');
-
-    try {
-      return JSON.parse(jobString);
-    } catch (err) {
-      consumerLogger.error('Error parsing job payload', {
-        ...errToObj(err)
-      });
-      throw err;
-    }
-  };
-
   if (useSingle) {
     return async function consumer(msg: Message | null) {
       if (msg === null) {
         return;
       }
-      const payload = getPayloadFromMsg(msg);
+      const payload = getPayloadFromMsg(msg, queueName, consumerLogger);
 
       const suffix = `${job.one.name}:${payload.job_id}`;
       const jobLogger = consumerLogger.child({
-        job_name: job.one.name,
-        job_id: payload.job_id
+        job_id: payload.job_id,
+        job_name: job.one.name
       });
 
       try {
@@ -78,13 +82,14 @@ export function defineConsumer(
 
   const bucketBatcher = createBucketBatcher<Message>({
     bucketSize: job.limit,
-    maxFlushInterval: 50,
     handleBatch: async (messages: Message[]) => {
       const successes = [];
       const failureIds = [];
       const failureErrors = [];
 
-      const payloads = messages.map(msg => getPayloadFromMsg(msg));
+      const payloads = messages.map(msg =>
+        getPayloadFromMsg(msg, queueName, consumerLogger)
+      );
 
       consumerLogger.info(`Running many jobs ${job.one.name}`, {
         job_ids: payloads.map(j => j.job_id)
@@ -95,8 +100,8 @@ export function defineConsumer(
       messages.forEach(msg => channel.ack(msg));
 
       results.forEach((tuple, idx) => {
-        const ok = tuple[0],
-          result = tuple[1];
+        const ok = tuple[0];
+        const result = tuple[1];
         if (ok) {
           consumerLogger.debug(`Ran onSuccess for job ${payloads[idx].job_id}`);
           successes.push(payloads[idx].job_id);
@@ -111,7 +116,8 @@ export function defineConsumer(
         onSuccessMany(successes),
         onFailureMany(failureIds, failureErrors)
       ]);
-    }
+    },
+    maxFlushInterval: 50
   });
 
   return async function consumer(msg: Message | null) {

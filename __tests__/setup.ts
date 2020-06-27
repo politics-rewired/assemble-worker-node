@@ -1,13 +1,14 @@
 import { connect } from 'amqplib';
+import { Pool } from 'pg';
+
 import config from '../src/lib/config';
+import { installSchema, migrate, reset } from '../src/lib/migrate';
 import {
   ASSEMBLE_EXCHANGE,
   META_QUEUE,
   TEST_WORKER_QUEUES
 } from '../src/lib/rabbit-runner';
-import { installSchema, migrate, reset } from '../src/lib/migrate';
 import { withClient } from '../src/utils';
-import { Pool } from 'pg';
 
 export default async function() {
   const connection = await connect(config.amqpConnectionString);

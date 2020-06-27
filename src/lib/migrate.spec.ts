@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
+import { withClient } from '../utils';
 import config from './config';
 import { migrate } from './migrate';
-import { withClient } from '../utils';
 
 describe('migrate', () => {
   let pool: Pool;

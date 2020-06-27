@@ -6,6 +6,7 @@ import {
   TEST_WORKER_QUEUES
 } from '../src/lib/rabbit-runner';
 import { migrate, reset } from '../src/lib/migrate';
+import { withClient } from '../src/utils';
 import { Pool } from 'pg';
 
 export default async function() {
@@ -17,11 +18,10 @@ export default async function() {
     connectionString: config.testDatabaseConnectionString
   });
 
-  const client = await pool.connect();
-
-  await reset(client);
-  await migrate(client);
-  await client.release();
+  await withClient(pool, async client => {
+    await reset(client);
+    await migrate(client);
+  });
   await pool.end();
 
   await channel.deleteQueue(META_QUEUE);

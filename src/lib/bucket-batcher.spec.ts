@@ -26,6 +26,8 @@ describe('bucket batcher', () => {
 
     await asyncSleep(250);
     expect(calledWithBatchSize).toBe(1);
+
+    bucketBatcher.teardown();
   });
 
   test('it shouldnt wait longer than the flush interval', async () => {
@@ -40,6 +42,8 @@ describe('bucket batcher', () => {
     bucketBatcher.push('a');
     await asyncSleep(250);
     expect(mock).toHaveBeenCalled();
+
+    bucketBatcher.teardown();
   });
 
   test('it shouldnt flush too early', async () => {
@@ -54,5 +58,7 @@ describe('bucket batcher', () => {
     bucketBatcher.push('a');
     await asyncSleep(50);
     expect(mock).not.toHaveBeenCalled();
+
+    bucketBatcher.teardown();
   });
 });

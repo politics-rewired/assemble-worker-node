@@ -2,6 +2,7 @@ import { connect } from 'amqplib';
 import config from '../src/lib/config';
 import { META_QUEUE, TEST_WORKER_QUEUES } from '../src/lib/rabbit-runner';
 import { reset } from '../src/lib/migrate';
+import { withClient } from '../src/utils';
 import { Pool } from 'pg';
 
 export default async function() {
@@ -19,9 +20,8 @@ export default async function() {
     connectionString: config.testDatabaseConnectionString
   });
 
-  const client = await pool.connect();
-
-  await reset(client);
-  await client.release();
+  await withClient(pool, async client => {
+    await reset(client);
+  });
   await pool.end();
 }

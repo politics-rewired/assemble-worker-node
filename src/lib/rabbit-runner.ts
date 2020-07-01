@@ -1,6 +1,7 @@
 import { ConfirmChannel, Message } from 'amqplib';
 import { connect, ChannelWrapper } from 'amqp-connection-manager';
-import debug from 'debug';
+import { Logger } from 'winston';
+
 import { defineConsumer } from './consume';
 import {
   TaskList,
@@ -11,8 +12,6 @@ import {
   CreateQueueFn
 } from './interfaces';
 
-const log = debug('assemble-worker:rabbit');
-
 export const ASSEMBLE_EXCHANGE = 'assemble_worker';
 export const META_QUEUE = 'meta-queue';
 export const TEST_WORKER_QUEUES = ['trivial-success', 'trivial-failure'];
@@ -22,6 +21,7 @@ const MAX_CONCURRENCY = 10;
 function defineSetupWorkerQueue(
   queueName: string,
   taskList: TaskList,
+  logger: Logger,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
   onSuccessMany: SuccessManyFn,
@@ -43,7 +43,7 @@ function defineSetupWorkerQueue(
     await channel.prefetch(concurrency);
     await channel.assertQueue(queueName, { durable: true });
     await channel.bindQueue(queueName, ASSEMBLE_EXCHANGE, queueName);
-    log('Set up queue: %s with concurrency: %d', queueName, concurrency);
+    logger.info(`Set up queue: ${queueName} with concurrency: ${concurrency}`);
 
     await registerQueue(queueName);
 
@@ -51,6 +51,7 @@ function defineSetupWorkerQueue(
       channel,
       queueName,
       task.task,
+      logger,
       onSuccess,
       onFailure,
       onSuccessMany,
@@ -64,6 +65,7 @@ function defineSetupWorkerQueue(
 function defineSetupMetaQueue(
   getChannelWrapper: () => ChannelWrapper,
   taskList: TaskList,
+  logger: Logger,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
   onSuccessMany: SuccessManyFn,
@@ -84,6 +86,7 @@ function defineSetupMetaQueue(
           const setupWorkerQueue = defineSetupWorkerQueue(
             queueName,
             taskList,
+            logger,
             onSuccess,
             onFailure,
             onSuccessMany,
@@ -106,6 +109,7 @@ function defineSetupMetaQueue(
       const setupWorkerQueue = defineSetupWorkerQueue(
         newQueueName,
         taskList,
+        logger,
         onSuccess,
         onFailure,
         onSuccessMany,
@@ -129,21 +133,23 @@ async function setupAssembleExchange(channel: ConfirmChannel) {
 function createRunner(
   amqpConnectionString: string,
   taskList: TaskList,
+  logger: Logger,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
   onSuccessMany: SuccessManyFn,
   onFailureMany: FailureManyFn,
   registerQueue: CreateQueueFn
 ) {
+  const rabbitLogger = logger.child({ component: 'rabbit' });
   // Create a new connection manager
   const connection = connect([amqpConnectionString]);
 
   connection.on('connect', info => {
-    log('Got connection at %s: %j', info.url, info.connection);
+    rabbitLogger.info(`Got connection at ${info.url}: ${info.connection}`);
   });
 
   connection.on('disconnect', info => {
-    log('Disconnected from rabbit, got error:', info.err);
+    rabbitLogger.info(`Disconnected from rabbit, got error: `, info.err);
   });
 
   const jobRegistryCache = new Set<string>();
@@ -155,6 +161,7 @@ function createRunner(
   const setupMetaQueue = defineSetupMetaQueue(
     getChannelWrapper,
     taskList,
+    rabbitLogger,
     onSuccess,
     onFailure,
     onSuccessMany,
@@ -166,9 +173,9 @@ function createRunner(
   const channelWrapper = connection.createChannel({
     setup: async channel => {
       await setupAssembleExchange(channel);
-      log('Set up exhange: assemble');
+      rabbitLogger.info('Set up exhange: assemble');
       await setupMetaQueue(channel);
-      log('Set up exchange: meta');
+      rabbitLogger.info('Set up exchange: meta');
     }
   });
 

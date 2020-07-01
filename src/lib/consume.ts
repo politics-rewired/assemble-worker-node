@@ -1,4 +1,7 @@
 import { ConfirmChannel, Message } from 'amqplib';
+import { Logger } from 'winston';
+
+import { errToObj } from './utils';
 import {
   SuccessFn,
   FailureFn,
@@ -6,52 +9,66 @@ import {
   FailureManyFn,
   Task
 } from './interfaces';
-import debug from 'debug';
 import { createBucketBatcher } from './bucket-batcher';
 
 export function defineConsumer(
   channel: ConfirmChannel,
   queueName: string,
   job: Task,
+  logger: Logger,
   onSuccess: SuccessFn,
   onFailure: FailureFn,
   onSuccessMany: SuccessManyFn,
   onFailureMany: FailureManyFn
 ) {
-  const log = debug(`assemble-worker:${queueName}`);
+  const consumerLogger = logger.child({ queue: queueName });
 
   const useSingle = !job.many;
 
-  log('Launching mode for %s: %s', queueName, useSingle ? 'SINGLE' : 'MANY');
+  consumerLogger.info(
+    `Launching in ${useSingle ? 'SINGLE' : 'MANY'} mode for queue ${queueName}`
+  );
+
+  const getPayloadFromMsg = (msg: Message) => {
+    const payloadString = msg.content.toString();
+    const jobString = payloadString.replace(`${queueName}|`, '');
+
+    try {
+      return JSON.parse(jobString);
+    } catch (err) {
+      consumerLogger.error('Error parsing job payload', {
+        ...errToObj(err)
+      });
+      throw err;
+    }
+  };
 
   if (useSingle) {
     return async function consumer(msg: Message) {
-      const payloadString = msg.content.toString();
-      // log('Got payload string: %s', payloadString);
+      const payload = getPayloadFromMsg(msg);
 
-      const jobString = payloadString.replace(queueName + '|', '');
-
-      let payload;
-      try {
-        payload = JSON.parse(jobString);
-        // log('Got %j', payload);
-      } catch (ex) {
-        payload = jobString;
-      }
+      const suffix = `${job.one.name}:${payload.job_id}`;
+      const jobLogger = consumerLogger.child({
+        job_name: job.one.name,
+        job_id: payload.job_id
+      });
 
       try {
-        log('Running job %s: %s', job.one.name, payload.job_id);
+        jobLogger.debug(`Attempting job ${suffix}`);
         await job.one(payload);
-        log('Job Succeeded');
+        jobLogger.debug(`Executed job ${suffix}`);
         await onSuccess(payload.job_id);
-        log('Successfully succeeded %s', payload.job_id);
+        jobLogger.debug(`Ran onSuccess for job ${suffix}`);
       } catch (error) {
-        log('Job failed: %j', error);
+        jobLogger.error(`Job failed ${suffix}: `, {
+          ...errToObj(error),
+          payload
+        });
         await onFailure(payload.job_id, error.toString());
-        log('Successfully failed job %s', payload.job_id);
+        jobLogger.debug(`Ran onFailure for job ${suffix}`);
       } finally {
         channel.ack(msg);
-        log('Successfully acked %s', payload.job_id);
+        jobLogger.debug(`Acked job ${suffix}`);
       }
     };
   }
@@ -64,13 +81,11 @@ export function defineConsumer(
       const failureIds = [];
       const failureErrors = [];
 
-      const payloads = messages.map(msg => getPayloadFromMsg(msg, queueName));
+      const payloads = messages.map(msg => getPayloadFromMsg(msg));
 
-      log(
-        'Running many jobs %s: %j',
-        job.one.name,
-        payloads.map(j => j.job_id)
-      );
+      consumerLogger.info(`Running many jobs ${job.one.name}`, {
+        job_ids: payloads.map(j => j.job_id)
+      });
 
       const results = await job.many(payloads);
 
@@ -79,12 +94,12 @@ export function defineConsumer(
       results.forEach((tuple, idx) => {
         const [ok, result] = tuple;
         if (ok) {
-          log('Successfully succeeded %s', payloads[idx].job_id);
+          consumerLogger.debug(`Ran onSuccess for job ${payloads[idx].job_id}`);
           successes.push(payloads[idx].job_id);
         } else {
           failureIds.push(payloads[idx].job_id);
           failureErrors.push(result);
-          log('Successfully failed %s', payloads[idx].job_id);
+          consumerLogger.debug(`Ran onFailure for job ${payloads[idx].job_id}`);
         }
       });
 
@@ -99,21 +114,3 @@ export function defineConsumer(
     bucketBatcher.push(msg);
   };
 }
-
-const getPayloadFromMsg = (msg: Message, queueName: string) => {
-  const payloadString = msg.content.toString();
-  // log('Got payload string: %s', payloadString);
-
-  const jobString = payloadString.replace(queueName + '|', '');
-
-  let payload;
-
-  try {
-    payload = JSON.parse(jobString);
-    // log('Got %j', payload);
-  } catch (ex) {
-    payload = jobString;
-  }
-
-  return payload;
-};

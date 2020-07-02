@@ -2,8 +2,9 @@ import { TaskList } from './lib/interfaces';
 import { migrate } from './lib/migrate';
 import { makePgFunctions } from './lib/pg-functions';
 import { createRunner } from './lib/rabbit-runner';
+import { defaultLogger } from './lib/utils';
 import { Pool } from 'pg';
-import { Logger, createLogger, format, transports } from 'winston';
+import { Logger } from 'winston';
 
 const DEFAULT_POKE_INTERVAL = 10 * 1000;
 
@@ -24,12 +25,7 @@ export async function run(options: AssembleWorkerOptions) {
     ? options.pgPool
     : new Pool({ connectionString: options.databaseConnectionString });
 
-  const logger = options.logger
-    ? options.logger
-    : createLogger({
-        format: format.combine(format.timestamp(), format.json()),
-        transports: [new transports.Console({ level: 'info' })]
-      });
+  const logger = options.logger ? options.logger : defaultLogger;
 
   if (!skipAutoMigrate) {
     const client = await pool.connect();
@@ -55,6 +51,7 @@ export async function run(options: AssembleWorkerOptions) {
   const runner = createRunner(
     options.amqpConnectionString,
     options.taskList,
+    logger,
     onSuccess,
     onFailure,
     onSuccessMany,

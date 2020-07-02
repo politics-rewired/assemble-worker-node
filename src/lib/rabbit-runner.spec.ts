@@ -1,4 +1,6 @@
 import { connect } from 'amqplib';
+
+import { defaultLogger } from './utils';
 import {
   createRunner,
   ASSEMBLE_EXCHANGE,
@@ -17,6 +19,7 @@ describe('rabbit interaction', () => {
     await createRunner(
       'amqp://localhost',
       {},
+      defaultLogger,
       async function() {},
       async function() {},
       async function() {},
@@ -80,6 +83,7 @@ describe('rabbit interaction', () => {
     const { channelWrapper } = await createRunner(
       'amqp://localhost',
       { [jobName]: { concurrency: 1, task: { one: triviallySuccessfulJob } } },
+      defaultLogger,
       onSuccess,
       async function() {},
       async function() {},
@@ -109,6 +113,7 @@ describe('rabbit interaction', () => {
     const { channelWrapper } = await createRunner(
       'amqp://localhost',
       { [jobName]: { concurrency: 1, task: { one: triviallyFailingJob } } },
+      defaultLogger,
       async function() {},
       onFailure,
       async function() {},

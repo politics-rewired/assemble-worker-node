@@ -1,7 +1,9 @@
 import { Pool } from 'pg';
+
 import config from './config';
 import { makePgFunctions } from './pg-functions';
 import { createRunner } from './rabbit-runner';
+import { defaultLogger } from './utils';
 
 const SLEEP_TIME = 500;
 
@@ -39,6 +41,7 @@ describe('integration tests', () => {
     const runner = await createRunner(
       config.amqpConnectionString,
       { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_SUCCEEDING_JOB } } },
+      defaultLogger,
       onSuccess,
       async function() {},
       async function() {},
@@ -60,6 +63,7 @@ describe('integration tests', () => {
     const runner = await createRunner(
       config.amqpConnectionString,
       { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_SUCCEEDING_JOB } } },
+      defaultLogger,
       onSuccess,
       async function() {},
       async function() {},
@@ -94,6 +98,7 @@ describe('integration tests', () => {
     const runner = await createRunner(
       config.amqpConnectionString,
       { [JOB_NAME]: { concurrency: 1, task: { one: DUMMY_FAILING_JOB } } },
+      defaultLogger,
       async function() {},
       onFailure,
       async function() {},
@@ -139,6 +144,7 @@ describe('integration tests', () => {
           }
         }
       },
+      defaultLogger,
       onSuccess,
       async function() {},
       async function() {},

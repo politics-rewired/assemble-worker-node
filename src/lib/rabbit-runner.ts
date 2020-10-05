@@ -140,7 +140,7 @@ function createRunner(
   onSuccessMany: SuccessManyFn,
   onFailureMany: FailureManyFn,
   registerQueue: CreateQueueFn,
-  onRabbitDisconnect: DisconnectHandler,
+  onRabbitDisconnect?: DisconnectHandler,
 ) {
   const rabbitLogger = logger.child({ component: 'rabbit' });
   // Create a new connection manager

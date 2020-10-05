@@ -1,4 +1,4 @@
-import { TaskList } from './lib/interfaces';
+import { TaskList, DisconnectHandler } from './lib/interfaces';
 import { migrate } from './lib/migrate';
 import { makePgFunctions } from './lib/pg-functions';
 import { createRunner } from './lib/rabbit-runner';
@@ -16,6 +16,7 @@ type AssembleWorkerOptions = {
   pokeInterval?: number;
   skipAutoMigrate?: boolean;
   logger?: Logger;
+  onRabbitDisconnect?: DisconnectHandler;
 };
 
 export async function run(options: AssembleWorkerOptions) {
@@ -56,7 +57,8 @@ export async function run(options: AssembleWorkerOptions) {
     onFailure,
     onSuccessMany,
     onFailureMany,
-    registerQueue
+    registerQueue,
+    options.onRabbitDisconnect
   );
 
   async function stop() {

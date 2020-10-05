@@ -9,7 +9,8 @@ import {
   FailureFn,
   SuccessManyFn,
   FailureManyFn,
-  CreateQueueFn
+  CreateQueueFn,
+  DisconnectHandler,
 } from './interfaces';
 
 export const ASSEMBLE_EXCHANGE = 'assemble_worker';
@@ -138,7 +139,8 @@ function createRunner(
   onFailure: FailureFn,
   onSuccessMany: SuccessManyFn,
   onFailureMany: FailureManyFn,
-  registerQueue: CreateQueueFn
+  registerQueue: CreateQueueFn,
+  onRabbitDisconnect: DisconnectHandler,
 ) {
   const rabbitLogger = logger.child({ component: 'rabbit' });
   // Create a new connection manager
@@ -150,6 +152,9 @@ function createRunner(
 
   connection.on('disconnect', info => {
     rabbitLogger.info(`Disconnected from rabbit, got error: `, info.err);
+    if (typeof onRabbitDisconnect === 'function') {
+      onRabbitDisconnect(info.err)
+    }
   });
 
   const jobRegistryCache = new Set<string>();

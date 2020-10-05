@@ -24,6 +24,8 @@ export type CreateQueueFn = (
   client?: PoolClient
 ) => Promise<any>;
 
+export type DisconnectHandler = (error: Error) => void | Promise<void>;
+
 export interface JobPayload {
   id: number;
   [key: string]: any;

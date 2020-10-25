@@ -17,7 +17,7 @@ export const ASSEMBLE_EXCHANGE = 'assemble_worker';
 export const META_QUEUE = 'meta-queue';
 export const TEST_WORKER_QUEUES = ['trivial-success', 'trivial-failure'];
 
-const MAX_CONCURRENCY = 10;
+const MAX_CONCURRENCY = 100;
 
 function defineSetupWorkerQueue(
   queueName: string,

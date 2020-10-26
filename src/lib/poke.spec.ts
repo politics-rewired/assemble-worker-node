@@ -40,9 +40,18 @@ describe('poke', () => {
       );
       console.log('All assemble_worker.test_queue_messages rows: ', allRows);
 
+      // 64-bit `bigint` is returned as a string by node-postgres
+      // See: https://stackoverflow.com/a/39176670
+      const jobId = parseInt(row.id, 10);
+      console.log({ jobId });
       const { rows: matchingRows } = await client.query(
-        `select * from assemble_worker.test_queue_messages where (to_json(message_body)->>'job_id')::bigint = $1`,
-        [parseInt(row.id, 10)] // this is returned as a string for some reason
+        `
+          select * from assemble_worker.test_queue_messages
+          where
+            routing_key = $1
+            and ((message_body::json)->>'job_id')::bigint = $2
+        `,
+        [DUMMY_QUEUE, jobId]
       );
 
       console.log('selected matching rows with json-coerced message_body');

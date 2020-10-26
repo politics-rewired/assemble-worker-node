@@ -101,7 +101,8 @@ export function defineConsumer(
       messages.forEach(msg => channel.ack(msg));
 
       results.forEach((tuple, idx) => {
-        const [ok, result] = tuple;
+        const ok = tuple[0],
+          result = tuple[1];
         if (ok) {
           consumerLogger.debug(`Ran onSuccess for job ${payloads[idx].job_id}`);
           successes.push(payloads[idx].job_id);

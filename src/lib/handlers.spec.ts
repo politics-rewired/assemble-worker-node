@@ -1,6 +1,12 @@
 import { Pool } from 'pg';
 import config from './config';
-import { makePgFunctions } from './pg-functions';
+import {
+  makePgFunctions,
+  OnSuccess,
+  OnFailure,
+  OnSuccessMany,
+  OnFailureMany
+} from './pg-functions';
 import { withClient } from '../utils';
 
 const DISABLE_TRIGGERS = 'SET session_replication_role = replica';
@@ -12,24 +18,22 @@ const TEST_ERROR = 'test-error';
 
 describe('handlers', () => {
   let pool: Pool;
+  let onSuccess: OnSuccess;
+  let onFailure: OnFailure;
+  let onSuccessMany: OnSuccessMany;
+  let onFailureMany: OnFailureMany;
 
   beforeAll(() => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
+    const fns = makePgFunctions(pool);
+    ({ onSuccess, onFailure, onSuccessMany, onFailureMany } = fns);
   });
 
   afterAll(async () => {
     await pool.end();
   });
-
-  // const { onSuccess, onFaiure, poke } = makePgFunctions(pool);
-  const {
-    onSuccess,
-    onFailure,
-    onSuccessMany,
-    onFailureMany
-  } = makePgFunctions(pool);
 
   test('complete job deletes a job', async () => {
     await withClient(pool, async client => {

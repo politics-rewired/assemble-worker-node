@@ -1,6 +1,38 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 
+export interface JobParams {
+  queueName: string;
+  payload: any;
+  runAt?: Date;
+}
+
+export type OnSuccess = <T>(
+  jobId: number,
+  client?: PoolClient
+) => Promise<QueryResult<T>>;
+export type OnSuccessMany = <T>(
+  jobIds: number[],
+  client?: PoolClient
+) => Promise<QueryResult<T>>;
+export type OnFailure = <T>(
+  jobId: number,
+  error: string,
+  client?: PoolClient
+) => Promise<QueryResult<T>>;
+export type OnFailureMany = <T>(
+  jobIds: number[],
+  errors: string[],
+  client?: PoolClient
+) => Promise<QueryResult<T>>;
 export type Poke = <T>(client?: PoolClient) => Promise<QueryResult<T>>;
+export type AddJob = <T>(
+  job: JobParams,
+  client?: PoolClient
+) => Promise<QueryResult<T>>;
+export type RegisterQueue = <T>(
+  queueName: string,
+  client?: PoolClient
+) => Promise<QueryResult<T>>;
 
 /**
  * Wraps onSuccess, onFailure, and poke with the pool
@@ -71,12 +103,6 @@ export function makePgFunctions(pool: Pool) {
    */
   const poke = async (client?: PoolClient) => {
     return await (client || pool).query('select assemble_worker.poke()');
-  };
-
-  type JobParams = {
-    queueName: string;
-    payload: any;
-    runAt?: Date;
   };
 
   /**

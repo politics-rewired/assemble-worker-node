@@ -17,7 +17,7 @@ describe('poke', () => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
-    poke = makePgFunctions(pool).poke;
+    ({ poke } = makePgFunctions(pool));
   });
 
   afterAll(async () => {

@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import config from './config';
-import { makePgFunctions } from './pg-functions';
+import { makePgFunctions, AddJob, RegisterQueue } from './pg-functions';
 import { META_QUEUE } from './rabbit-runner';
 import { withClient } from '../utils';
 
@@ -14,18 +14,19 @@ const DUMMY_PAYLOAD = () => ({
 
 describe('assemble_worker.add_job', () => {
   let pool: Pool;
+  let addJob: AddJob;
+  let registerQueue: RegisterQueue;
 
   beforeAll(() => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
+    ({ addJob, registerQueue } = makePgFunctions(pool));
   });
 
   afterAll(async () => {
     await pool.end();
   });
-
-  const { addJob, registerQueue } = makePgFunctions(pool);
 
   test('without queue, should go to pending', async () => {
     await withClient(pool, async client => {

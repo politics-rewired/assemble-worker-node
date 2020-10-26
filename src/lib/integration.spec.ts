@@ -1,7 +1,13 @@
 import { Pool } from 'pg';
 
 import config from './config';
-import { makePgFunctions } from './pg-functions';
+import {
+  makePgFunctions,
+  AddJob,
+  Poke,
+  OnFailure,
+  RegisterQueue
+} from './pg-functions';
 import { createRunner } from './rabbit-runner';
 import { defaultLogger } from './utils';
 
@@ -29,18 +35,21 @@ const DUMMY_FAILING_JOB = async () => {
 
 describe('integration tests', () => {
   let pool: Pool;
+  let addJob: AddJob;
+  let poke: Poke;
+  let onFailure: OnFailure;
+  let registerQueue: RegisterQueue;
 
   beforeAll(() => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
+    ({ addJob, poke, onFailure, registerQueue } = makePgFunctions(pool));
   });
 
   afterAll(async () => {
     await pool.end();
   });
-
-  const { addJob, poke, onFailure, registerQueue } = makePgFunctions(pool);
 
   test('add_job runs job successfully', async () => {
     const JOB_NAME = 'add-job-runs-job';

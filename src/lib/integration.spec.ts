@@ -171,10 +171,10 @@ describe('integration tests', () => {
 
     await addJob({ queueName: JOB_NAME, payload: DUMMY_PAYLOAD() });
     await addJob({ queueName: JOB_NAME, payload: DUMMY_PAYLOAD() });
-    await sleep(2 * 1000);
+    await sleep(SLEEP_TIME);
 
     await runner.stop();
-    expect(onSuccess).toHaveBeenCalledTimes(0);
+    expect(onSuccess).toHaveBeenCalled();
     expect(onSuccessMany).toHaveBeenCalledTimes(1);
   });
 });

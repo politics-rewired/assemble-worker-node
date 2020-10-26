@@ -105,13 +105,7 @@ function defineSetupMetaQueue(
       if (msg === null) {
         return;
       }
-      let payloadString: string;
-      try {
-        payloadString = msg.content.toString();
-      } catch (err) {
-        console.error('getPayloadFromMsg error: ', err, { msg });
-        throw err;
-      }
+      const payloadString = msg.content.toString();
       const newQueueName = payloadString.replace(META_QUEUE + '|', '');
 
       const channelWrapper = getChannelWrapper();

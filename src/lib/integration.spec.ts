@@ -175,6 +175,9 @@ describe('integration tests', () => {
 
     await runner.stop();
     expect(onSuccess).toHaveBeenCalledTimes(0);
+
+    // TODO: make sure this has been called the correct number of times when we pick back up work
+    // on batched job processing
     expect(onSuccessMany).toHaveBeenCalled();
   });
 });

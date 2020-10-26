@@ -39,7 +39,7 @@ describe('poke', () => {
       console.log('All assemble_worker.test_queue_messages rows: ', allRows);
 
       const { rows: matchingRows } = await client.query(
-        `select * from assemble_worker.test_queue_messages where ((message_body::json)->>'job_id')::bigint = $1`,
+        `select * from assemble_worker.test_queue_messages where (to_json(message_body)->>'job_id')::bigint = $1`,
         [row.id]
       );
 

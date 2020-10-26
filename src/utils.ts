@@ -10,6 +10,6 @@ export const withClient = async <T>(
   try {
     return await handler(client);
   } finally {
-    await client.release();
+    client.release();
   }
 };

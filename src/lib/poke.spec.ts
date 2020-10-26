@@ -23,8 +23,6 @@ describe('poke', () => {
       const oneSecondAgo = new Date();
       oneSecondAgo.setSeconds(oneSecondAgo.getSeconds() - 1);
 
-      console.log('About to insert dummy payload', DUMMY_PAYLOAD);
-
       const {
         rows: [row]
       } = await client.query(
@@ -32,15 +30,13 @@ describe('poke', () => {
         [DUMMY_QUEUE, DUMMY_PAYLOAD, oneSecondAgo]
       );
 
-      console.log('Inserted dummy payload');
-
-      console.log('About to poke twice');
-
       await Promise.all([poke(client), poke(client)]);
 
-      console.log(
-        'Poked twice. About to select matching rows with json-coerced message_body'
+      const { rows: allRows } = await client.query(
+        `select * from assemble_worker.test_queue_messages`,
+        []
       );
+      console.log('All assemble_worker.test_queue_messages rows: ', allRows);
 
       const { rows: matchingRows } = await client.query(
         `select * from assemble_worker.test_queue_messages where ((message_body::json)->>'job_id')::bigint = $1`,

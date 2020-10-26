@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import config from './config';
-import { makePgFunctions } from './pg-functions';
+import { makePgFunctions, Poke } from './pg-functions';
 import { withClient } from '../utils';
 
 const ENABLE_TEST_MODE = `select set_config('worker.test', 'on', false);`;
@@ -10,11 +10,19 @@ const DUMMY_QUEUE = 'dummy-queue';
 const DUMMY_PAYLOAD = { value: (Math.random() * 100).toString() };
 
 describe('poke', () => {
-  const pool = new Pool({
-    connectionString: config.testDatabaseConnectionString
-  });
+  let pool: Pool;
+  let poke: Poke;
 
-  const { poke } = makePgFunctions(pool);
+  beforeAll = async () => {
+    pool = new Pool({
+      connectionString: config.testDatabaseConnectionString
+    });
+    poke = makePgFunctions(pool).poke;
+  };
+
+  afterAll = async () => {
+    await pool.end();
+  };
 
   test('poke sends a message that should be sent - status now running, second poke shouldnt send two', async () => {
     await withClient(pool, async client => {

@@ -3,11 +3,19 @@ import config from './config';
 import { migrate } from './migrate';
 import { withClient } from '../utils';
 
-const pool = new Pool({
-  connectionString: config.migrationTestDatabaseConnectionString
-});
-
 describe('migrate', () => {
+  let pool: Pool;
+
+  beforeAll = async () => {
+    pool = new Pool({
+      connectionString: config.testDatabaseConnectionString
+    });
+  };
+
+  afterAll = async () => {
+    await pool.end();
+  };
+
   test('migration runs', async () => {
     await withClient(pool, async client => {
       await migrate(client);

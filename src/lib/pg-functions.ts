@@ -1,4 +1,6 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool, PoolClient, QueryResult } from 'pg';
+
+export type Poke = <T>(client?: PoolClient) => Promise<QueryResult<T>>;
 
 /**
  * Wraps onSuccess, onFailure, and poke with the pool

@@ -11,9 +11,17 @@ const DUMMY_PAYLOAD = { value: (Math.random() * 100).toString() };
 const TEST_ERROR = 'test-error';
 
 describe('handlers', () => {
-  const pool = new Pool({
-    connectionString: config.testDatabaseConnectionString
-  });
+  let pool: Pool;
+
+  beforeAll = async () => {
+    pool = new Pool({
+      connectionString: config.testDatabaseConnectionString
+    });
+  };
+
+  afterAll = async () => {
+    await pool.end();
+  };
 
   // const { onSuccess, onFaiure, poke } = makePgFunctions(pool);
   const {

@@ -42,7 +42,7 @@ describe('poke', () => {
 
       const { rows: matchingRows } = await client.query(
         `select * from assemble_worker.test_queue_messages where (to_json(message_body)->>'job_id')::bigint = $1`,
-        [row.id]
+        [parseInt(row.id, 10)] // this is returned as a string for some reason
       );
 
       console.log('selected matching rows with json-coerced message_body');

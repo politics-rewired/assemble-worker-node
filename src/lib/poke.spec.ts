@@ -32,6 +32,8 @@ describe('poke', () => {
 
       await Promise.all([poke(client), poke(client)]);
 
+      console.log({ row });
+
       const { rows: allRows } = await client.query(
         `select * from assemble_worker.test_queue_messages`,
         []

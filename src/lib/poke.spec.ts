@@ -32,18 +32,9 @@ describe('poke', () => {
 
       await Promise.all([poke(client), poke(client)]);
 
-      console.log({ row });
-
-      const { rows: allRows } = await client.query(
-        `select * from assemble_worker.test_queue_messages`,
-        []
-      );
-      console.log('All assemble_worker.test_queue_messages rows: ', allRows);
-
       // 64-bit `bigint` is returned as a string by node-postgres
       // See: https://stackoverflow.com/a/39176670
       const jobId = parseInt(row.id, 10);
-      console.log({ jobId });
       const { rows: matchingRows } = await client.query(
         `
           select * from assemble_worker.test_queue_messages
@@ -53,8 +44,6 @@ describe('poke', () => {
         `,
         [DUMMY_QUEUE, jobId]
       );
-
-      console.log('selected matching rows with json-coerced message_body');
 
       expect(Array.isArray(matchingRows)).toBe(true);
       expect(matchingRows).toHaveLength(1);

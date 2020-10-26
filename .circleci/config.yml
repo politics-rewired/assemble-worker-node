@@ -22,7 +22,7 @@ jobs:
       # RabbitMQ
       - image: rabbitmq:3.8.5-alpine
       # Bridge
-      - image: gcr.io/assemble-services/pg-amqp-bridge-node:8b3790e2b16b01d34e7be9254913d5347aedbc4b
+      - image: gcr.io/assemble-services/pg-amqp-bridge-node:1.0.1
         command:
           - /bin/sh
           - -c

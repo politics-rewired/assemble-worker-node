@@ -13,15 +13,15 @@ const TEST_ERROR = 'test-error';
 describe('handlers', () => {
   let pool: Pool;
 
-  beforeAll = async () => {
+  beforeAll(() => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
-  };
+  });
 
-  afterAll = async () => {
+  afterAll(async () => {
     await pool.end();
-  };
+  });
 
   // const { onSuccess, onFaiure, poke } = makePgFunctions(pool);
   const {

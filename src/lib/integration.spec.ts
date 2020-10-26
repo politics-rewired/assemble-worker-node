@@ -30,15 +30,15 @@ const DUMMY_FAILING_JOB = async () => {
 describe('integration tests', () => {
   let pool: Pool;
 
-  beforeAll = async () => {
+  beforeAll(() => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
-  };
+  });
 
-  afterAll = async () => {
+  afterAll(async () => {
     await pool.end();
-  };
+  });
 
   const { addJob, poke, onFailure, registerQueue } = makePgFunctions(pool);
 

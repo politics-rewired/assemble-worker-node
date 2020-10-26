@@ -6,15 +6,15 @@ import { withClient } from '../utils';
 describe('migrate', () => {
   let pool: Pool;
 
-  beforeAll = async () => {
+  beforeAll(() => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
-  };
+  });
 
-  afterAll = async () => {
+  afterAll(async () => {
     await pool.end();
-  };
+  });
 
   test('migration runs', async () => {
     await withClient(pool, async client => {

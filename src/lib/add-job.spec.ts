@@ -13,8 +13,16 @@ const DUMMY_PAYLOAD = () => ({
 });
 
 describe('assemble_worker.add_job', () => {
-  const pool = new Pool({
-    connectionString: config.testDatabaseConnectionString
+  let pool: Pool;
+
+  beforeAll(() => {
+    pool = new Pool({
+      connectionString: config.testDatabaseConnectionString
+    });
+  });
+
+  afterAll(async () => {
+    await pool.end();
   });
 
   const { addJob, registerQueue } = makePgFunctions(pool);

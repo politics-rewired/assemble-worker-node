@@ -13,16 +13,16 @@ describe('poke', () => {
   let pool: Pool;
   let poke: Poke;
 
-  beforeAll = async () => {
+  beforeAll(() => {
     pool = new Pool({
       connectionString: config.testDatabaseConnectionString
     });
     poke = makePgFunctions(pool).poke;
-  };
+  });
 
-  afterAll = async () => {
+  afterAll(async () => {
     await pool.end();
-  };
+  });
 
   test('poke sends a message that should be sent - status now running, second poke shouldnt send two', async () => {
     await withClient(pool, async client => {

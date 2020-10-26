@@ -50,7 +50,10 @@ export function defineConsumer(
   };
 
   if (useSingle) {
-    return async function consumer(msg: Message) {
+    return async function consumer(msg: Message | null) {
+      if (msg === null) {
+        return;
+      }
       const payload = getPayloadFromMsg(msg);
 
       const suffix = `${job.one.name}:${payload.job_id}`;
@@ -116,7 +119,10 @@ export function defineConsumer(
     }
   });
 
-  return async function consumer(msg: Message) {
+  return async function consumer(msg: Message | null) {
+    if (msg === null) {
+      return;
+    }
     bucketBatcher.push(msg);
   };
 }

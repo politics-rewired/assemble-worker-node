@@ -102,6 +102,9 @@ function defineSetupMetaQueue(
     );
 
     channel.consume(META_QUEUE, async (msg: Message) => {
+      if (msg === null) {
+        return;
+      }
       let payloadString: string;
       try {
         payloadString = msg.content.toString();

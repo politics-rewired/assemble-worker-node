@@ -30,7 +30,13 @@ export function defineConsumer(
   );
 
   const getPayloadFromMsg = (msg: Message) => {
-    const payloadString = msg.content.toString();
+    let payloadString: string;
+    try {
+      payloadString = msg.content.toString();
+    } catch (err) {
+      console.error('getPayloadFromMsg error: ', err, { msg });
+      throw err;
+    }
     const jobString = payloadString.replace(`${queueName}|`, '');
 
     try {

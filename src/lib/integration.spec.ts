@@ -174,7 +174,7 @@ describe('integration tests', () => {
     await sleep(SLEEP_TIME);
 
     await runner.stop();
-    expect(onSuccess).toHaveBeenCalled();
-    expect(onSuccessMany).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledTimes(0);
+    expect(onSuccessMany).toHaveBeenCalled();
   });
 });

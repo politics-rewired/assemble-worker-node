@@ -84,7 +84,7 @@ export function defineConsumer(
 
   const bucketBatcher = createBucketBatcher<Message>({
     bucketSize: job.limit,
-    maxFlushInterval: 5000,
+    maxFlushInterval: 1000,
     handleBatch: async (messages: Message[]) => {
       const successes = [];
       const failureIds = [];

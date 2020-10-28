@@ -1,3 +1,4 @@
+import config from './config';
 import { connect } from 'amqplib';
 
 import { defaultLogger } from './utils';
@@ -17,7 +18,7 @@ const SLEEP_TIME = 500;
 describe('rabbit interaction', () => {
   test('importing rabbit creates meta-queue', async () => {
     await createRunner(
-      'amqp://localhost',
+      config.amqpConnectionString,
       {},
       defaultLogger,
       async function() {},
@@ -29,7 +30,7 @@ describe('rabbit interaction', () => {
 
     await sleep(SLEEP_TIME);
 
-    const connection = await connect('amqp://localhost');
+    const connection = await connect(config.amqpConnectionString);
     const channel = await connection.createChannel();
 
     const queueExists = await channel.checkQueue(META_QUEUE);
@@ -81,7 +82,7 @@ describe('rabbit interaction', () => {
     const onSuccess = jest.fn();
 
     const { channelWrapper } = await createRunner(
-      'amqp://localhost',
+      config.amqpConnectionString,
       { [jobName]: { concurrency: 1, task: { one: triviallySuccessfulJob } } },
       defaultLogger,
       onSuccess,
@@ -111,7 +112,7 @@ describe('rabbit interaction', () => {
     const onFailure = jest.fn();
 
     const { channelWrapper } = await createRunner(
-      'amqp://localhost',
+      config.amqpConnectionString,
       { [jobName]: { concurrency: 1, task: { one: triviallyFailingJob } } },
       defaultLogger,
       async function() {},

@@ -44,7 +44,10 @@ export function defineConsumer(
   };
 
   if (useSingle) {
-    return async function consumer(msg: Message) {
+    return async function consumer(msg: Message | null) {
+      if (msg === null) {
+        return;
+      }
       const payload = getPayloadFromMsg(msg);
 
       const suffix = `${job.one.name}:${payload.job_id}`;
@@ -92,7 +95,8 @@ export function defineConsumer(
       messages.forEach(msg => channel.ack(msg));
 
       results.forEach((tuple, idx) => {
-        const [ok, result] = tuple;
+        const ok = tuple[0],
+          result = tuple[1];
         if (ok) {
           consumerLogger.debug(`Ran onSuccess for job ${payloads[idx].job_id}`);
           successes.push(payloads[idx].job_id);
@@ -110,7 +114,10 @@ export function defineConsumer(
     }
   });
 
-  return async function consumer(msg: Message) {
+  return async function consumer(msg: Message | null) {
+    if (msg === null) {
+      return;
+    }
     bucketBatcher.push(msg);
   };
 }

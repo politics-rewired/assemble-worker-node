@@ -3,6 +3,7 @@ import { migrate } from './lib/migrate';
 import { makePgFunctions } from './lib/pg-functions';
 import { createRunner } from './lib/rabbit-runner';
 import { defaultLogger } from './lib/utils';
+import { withClient } from './utils';
 import { Pool } from 'pg';
 import { Logger } from 'winston';
 
@@ -29,9 +30,9 @@ export async function run(options: AssembleWorkerOptions) {
   const logger = options.logger ? options.logger : defaultLogger;
 
   if (!skipAutoMigrate) {
-    const client = await pool.connect();
-    await migrate(client);
-    await client.release();
+    await withClient(pool, async client => {
+      await migrate(client);
+    });
   }
 
   const {

@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
-import config from './config';
-import { makePgFunctions, AddJob, RegisterQueue } from './pg-functions';
-import { META_QUEUE } from './rabbit-runner';
 import { withClient } from '../utils';
+import config from './config';
+import { AddJob, makePgFunctions, RegisterQueue } from './pg-functions';
+import { META_QUEUE } from './rabbit-runner';
 
 const ENABLE_TEST_MODE = `select set_config('worker.test', 'on', false);`;
 const DISABLE_TEST_MODE = `select set_config('worker.test', 'off', false);`;

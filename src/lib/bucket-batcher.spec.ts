@@ -10,14 +10,14 @@ describe('bucket batcher', () => {
 
     const bucketBatcher = createBucketBatcher({
       bucketSize: 3,
-      maxFlushInterval: 200,
       handleBatch: batch => {
         calledWithBatchSize = batch.length;
         mock();
-      }
+      },
+      maxFlushInterval: 200
     });
 
-    new Array(4).fill(null).forEach(_ => {
+    [...Array(4)].forEach(_ => {
       bucketBatcher.push('a');
     });
 
@@ -35,8 +35,8 @@ describe('bucket batcher', () => {
 
     const bucketBatcher = createBucketBatcher({
       bucketSize: 10,
-      maxFlushInterval: 200,
-      handleBatch: mock
+      handleBatch: mock,
+      maxFlushInterval: 200
     });
 
     bucketBatcher.push('a');
@@ -51,8 +51,8 @@ describe('bucket batcher', () => {
 
     const bucketBatcher = createBucketBatcher({
       bucketSize: 10,
-      maxFlushInterval: 200,
-      handleBatch: mock
+      handleBatch: mock,
+      maxFlushInterval: 200
     });
 
     bucketBatcher.push('a');

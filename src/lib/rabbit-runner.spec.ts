@@ -1,13 +1,15 @@
-import config from './config';
+// tslint:disable:no-empty
+
 import { connect } from 'amqplib';
 
-import { defaultLogger } from './utils';
+import config from './config';
 import {
-  createRunner,
   ASSEMBLE_EXCHANGE,
+  createRunner,
   META_QUEUE
   // TEST_WORKER_QUEUES
 } from './rabbit-runner';
+import { defaultLogger } from './utils';
 
 async function sleep(n: number) {
   return new Promise((resolve, _reject) => setTimeout(resolve, n));
@@ -21,11 +23,11 @@ describe('rabbit interaction', () => {
       config.amqpConnectionString,
       {},
       defaultLogger,
-      async function() {},
-      async function() {},
-      async function() {},
-      async function() {},
-      async function() {}
+      async () => {},
+      async () => {},
+      async () => {},
+      async () => {},
+      async () => {}
     );
 
     await sleep(SLEEP_TIME);
@@ -47,8 +49,8 @@ describe('rabbit interaction', () => {
   //   const { channelWrapper } = await createRunner(
   //     'amqp://localhost',
   //     {},
-  //     async function() {},
-  //     async function() {},
+  //     async () => {},
+  //     async () => {},
   //     registerQueue
   //   );
 
@@ -86,10 +88,10 @@ describe('rabbit interaction', () => {
       { [jobName]: { concurrency: 1, task: { one: triviallySuccessfulJob } } },
       defaultLogger,
       onSuccess,
-      async function() {},
-      async function() {},
-      async function() {},
-      async function() {}
+      async () => {},
+      async () => {},
+      async () => {},
+      async () => {}
     );
 
     await channelWrapper.publish(
@@ -115,11 +117,11 @@ describe('rabbit interaction', () => {
       config.amqpConnectionString,
       { [jobName]: { concurrency: 1, task: { one: triviallyFailingJob } } },
       defaultLogger,
-      async function() {},
+      async () => {},
       onFailure,
-      async function() {},
-      async function() {},
-      async function() {}
+      async () => {},
+      async () => {},
+      async () => {}
     );
 
     await channelWrapper.publish(

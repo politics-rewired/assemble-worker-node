@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
+import { withClient } from '../utils';
 import config from './config';
 import { makePgFunctions, Poke } from './pg-functions';
-import { withClient } from '../utils';
 
 const ENABLE_TEST_MODE = `select set_config('worker.test', 'on', false);`;
 const DISABLE_TEST_MODE = `select set_config('worker.test', 'off', false);`;

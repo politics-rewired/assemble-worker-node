@@ -1,6 +1,35 @@
 version: 2
 
 jobs:
+  lint:
+    resource_class: small
+    docker:
+      - image: circleci/node:12.18.1
+    working_directory: ~/assemble-worker
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+      - run: yarn install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+
+      - run:
+          name: Lint commits
+          command: yarn commitlint-circle
+
+      - run:
+          name: Lint codebase
+          command: yarn lint
+
   test:
     # https://circleci.com/docs/2.0/configuration-reference/#resource_class
     resource_class: small
@@ -91,4 +120,7 @@ workflows:
   version: 2
   build:
     jobs:
-      - test
+      - lint
+      - test:
+          requires:
+            - lint

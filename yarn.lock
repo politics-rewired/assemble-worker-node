@@ -483,6 +483,15 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
+"@timbeyer/commitlint-circle@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@timbeyer/commitlint-circle/-/commitlint-circle-3.0.0.tgz#2b63228c854ac2c252ec95c75f1e4a79300f8b2c"
+  integrity sha512-DWwl78zORYgHZGQxfcRcqwxpZEU+Y9TuBXARJG35k81NKG/dy1XUApHpVLUzpBbP/Zhy5cKf+OG5J4H8DD1A1w==
+  dependencies:
+    "@octokit/rest" "^15.9.4"
+    execa "^0.10.0"
+    tslib "^1.9.3"
+
 "@types/amqp-connection-manager@^2.0.8":
   version "2.0.8"
   resolved "https://registry.yarnpkg.com/@types/amqp-connection-manager/-/amqp-connection-manager-2.0.8.tgz#a53b049d6b8e24f72c963822a4238158d2dd05a1"
@@ -1354,15 +1363,6 @@ commitizen@^4.0.3, commitizen@^4.2.2:
     minimist "1.2.5"
     strip-bom "4.0.0"
     strip-json-comments "3.0.1"
-
-commitlint-circle@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/commitlint-circle/-/commitlint-circle-1.0.0.tgz#87d529e8cdbff8ea1edfc75720900057de28582c"
-  integrity sha512-YuwyQLM0NnbWN0Rt1dloQiw8kMcZGr1QVhyecYkV0pR1YOmc4QHwIM+c/2E7VxU8lzbI2gW0/2fRvOLAXJi5mQ==
-  dependencies:
-    "@octokit/rest" "^15.9.4"
-    execa "^0.10.0"
-    tslib "^1.9.3"
 
 compare-func@^2.0.0:
   version "2.0.0"

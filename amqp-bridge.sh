@@ -4,8 +4,8 @@
 
 GITHUB_NETWORK=$(docker network ls | grep github | awk '{ print $2 }')
 
-dockerize -wait tcp://localhost:5432 -timeout 1m
-dockerize -wait tcp://localhost:5672 -timeout 1m
+./dockerize -wait tcp://localhost:5432 -timeout 1m
+./dockerize -wait tcp://localhost:5672 -timeout 1m
 
 docker create \
   --bridge "$GITHUB_NETWORK" \

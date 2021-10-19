@@ -94,35 +94,34 @@ jobs:
       - name: Run Tests
         run: yarn test --detectOpenHandles --forceExit --runInBand
 
-  # deploy-npm-release:
-  #   name: Publish NPM release
-  #   if: startsWith( github.ref, 'refs/tags/v')
-  #   needs: test
-  #   runs-on: ubuntu-latest
-  #   steps:
+  deploy-npm-release:
+    name: Publish NPM release
+    if: startsWith( github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
 
-  #     - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
 
-  #     - uses: actions/setup-node@v2
-  #       with:
-  #         node-version: '14'
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
 
-  #     - name: Get yarn cache directory path
-  #       id: yarn-cache-dir-path
-  #       run: echo "::set-output name=dir::$(yarn cache dir)"
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
-  #     - uses: actions/cache@v2
-  #       id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-  #       with:
-  #         path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-  #         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-yarn-
+      - run: yarn install
 
-  #     - run: yarn install
+      - run: yarn build
 
-  #     - run: yarn build
-
-  #     - uses: JS-DevTools/npm-publish@v1
-  #       with:
-  #         token: ${{ secrets.NPM_AUTOMATION_TOKEN }}
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_AUTOMATION_TOKEN }}

@@ -1,4 +1,4 @@
-import envalid, { url } from 'envalid';
+import { url, cleanEnv } from 'envalid';
 
 interface AssembleWorkerGlobalConfig {
   testDatabaseConnectionString: string;
@@ -6,7 +6,7 @@ interface AssembleWorkerGlobalConfig {
   amqpConnectionString: string;
 }
 
-const env = envalid.cleanEnv(process.env, {
+const env = cleanEnv(process.env, {
   TEST_AMQP_URI: url({ default: undefined }),
   TEST_DATABASE_URL: url({ default: undefined }),
   TEST_MIGRATION_DATABASE_URL: url({ default: undefined }),

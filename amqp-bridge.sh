@@ -2,18 +2,13 @@
 
 # Run the pg-amqp-bridge image for CI tests
 
-docker network ls
+GITHUB_NETWORK=$(docker network ls | grep github | awk '{ print $2 }')
 
-echo "waiting for postgres"
-while ! nc -z 127.0.0.1 5432; do
-  echo "sleeping 1s" && sleep 1
-done
-echo "waiting for rabbitmq"
-while ! nc -z 127.0.0.1 5672; do
-  echo "sleeping 1s" && sleep 1
-done
+dockerize -wait tcp://localhost:5432 -timeout 1m
+dockerize -wait tcp://localhost:5672 -timeout 1m
 
 docker create \
+  --bridge "$GITHUB_NETWORK" \
   -e AMQP_URI="amqp://guest:guest@127.0.0.1" \
   -e POSTGRESQL_URI="postgres://postgres:postgres@127.0.0.1:5432/assemble_worker_test" \
   -e DELIVERY_MODE="NON-PERSISTENT" \

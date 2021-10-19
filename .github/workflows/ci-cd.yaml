@@ -52,7 +52,7 @@ jobs:
       TEST_DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/assemble_worker_test'
 
     steps:
-      - name: Checkout codebase
+      - name: checkout
         uses: actions/checkout@v2
 
       - name: Start AMQP Bridge

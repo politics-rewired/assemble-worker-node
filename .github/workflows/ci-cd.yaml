@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         node-version:
-          - 14.18.1-buster
+          - '14.18.1'
 
     services:
       postgres:

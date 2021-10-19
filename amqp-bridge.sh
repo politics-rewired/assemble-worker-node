@@ -17,6 +17,6 @@ docker run \
   --env POSTGRESQL_URI="postgres://postgres:postgres@postgres:5432/assemble_worker_test" \
   --env DELIVERY_MODE="NON-PERSISTENT" \
   --env BRIDGE_CHANNELS="assemble_worker:assemble_worker" \
-  us-east4-docker.pkg.dev/assemble-services/apps/pg-amqp-bridge:1.3.1
+  us-east4-docker.pkg.dev/assemble-services/apps/pg-amqp-bridge:1.3.2
 
 sleep 1

@@ -59,9 +59,6 @@ jobs:
         run: |
           GITHUB_NETWORK=$(docker network ls | grep github | awk '{ print $2 }')
 
-          ./dockerize -wait tcp://localhost:5432 -timeout 30s
-          ./dockerize -wait tcp://localhost:5672 -timeout 30s
-
           docker run \
             --detach \
             --name  "amqp-bridge" \

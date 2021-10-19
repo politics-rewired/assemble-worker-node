@@ -12,7 +12,6 @@ GITHUB_NETWORK=$(docker network ls | grep github | awk '{ print $2 }')
 docker run \
   --detach \
   --name  "amqp-bridge" \
-  --network "bridge" \
   --network "$GITHUB_NETWORK" \
   --env AMQP_URI="amqp://guest:guest@rabbitmq" \
   --env POSTGRESQL_URI="postgres://postgres:postgres@postgres:5432/assemble_worker_test" \

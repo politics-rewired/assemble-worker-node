@@ -10,7 +10,7 @@ import {
   FailureManyFn,
   SuccessFn,
   SuccessManyFn,
-  TaskList
+  TaskList,
 } from './interfaces';
 
 export const ASSEMBLE_EXCHANGE = 'assemble_worker';
@@ -80,7 +80,7 @@ function defineSetupMetaQueue(
 
     // Define handler for creating new queues
     await Promise.all(
-      Object.keys(taskList).map(async queueName => {
+      Object.keys(taskList).map(async (queueName) => {
         const queueAlreadyRegistered = jobRegistryCache.has(queueName);
 
         if (!queueAlreadyRegistered) {
@@ -149,11 +149,11 @@ function createRunner(
   // Create a new connection manager
   const connection = connect([amqpConnectionString]);
 
-  connection.on('connect', info => {
+  connection.on('connect', (info) => {
     rabbitLogger.info(`Got connection at ${info.url}: ${info.connection}`);
   });
 
-  connection.on('disconnect', info => {
+  connection.on('disconnect', (info) => {
     rabbitLogger.info(`Disconnected from rabbit, got error: `, info.err);
     if (typeof onRabbitDisconnect === 'function') {
       onRabbitDisconnect(info.err);
@@ -179,12 +179,12 @@ function createRunner(
   );
 
   const channelWrapper = connection.createChannel({
-    setup: async channel => {
+    setup: async (channel) => {
       await setupAssembleExchange(channel);
       rabbitLogger.info('Set up exhange: assemble');
       await setupMetaQueue(channel);
       rabbitLogger.info('Set up exchange: meta');
-    }
+    },
   });
 
   async function stop() {

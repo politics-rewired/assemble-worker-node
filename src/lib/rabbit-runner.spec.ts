@@ -6,7 +6,7 @@ import config from './config';
 import {
   ASSEMBLE_EXCHANGE,
   createRunner,
-  META_QUEUE
+  META_QUEUE,
   // TEST_WORKER_QUEUES
 } from './rabbit-runner';
 import { defaultLogger } from './utils';

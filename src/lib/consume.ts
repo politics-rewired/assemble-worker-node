@@ -7,7 +7,7 @@ import {
   FailureManyFn,
   SuccessFn,
   SuccessManyFn,
-  Task
+  Task,
 } from './interfaces';
 import { errToObj } from './utils';
 
@@ -23,7 +23,7 @@ const getPayloadFromMsg = (
     return JSON.parse(jobString);
   } catch (err) {
     consumerLogger.error('Error parsing job payload', {
-      ...errToObj(err)
+      ...errToObj(err),
     });
     throw err;
   }
@@ -57,7 +57,7 @@ export function defineConsumer(
       const suffix = `${job.one.name}:${payload.job_id}`;
       const jobLogger = consumerLogger.child({
         job_id: payload.job_id,
-        job_name: job.one.name
+        job_name: job.one.name,
       });
 
       try {
@@ -69,7 +69,7 @@ export function defineConsumer(
       } catch (error) {
         jobLogger.error(`Job failed ${suffix}: `, {
           ...errToObj(error),
-          payload
+          payload,
         });
         await onFailure(payload.job_id, error.toString());
         jobLogger.debug(`Ran onFailure for job ${suffix}`);
@@ -87,17 +87,17 @@ export function defineConsumer(
       const failureIds = [];
       const failureErrors = [];
 
-      const payloads = messages.map(msg =>
+      const payloads = messages.map((msg) =>
         getPayloadFromMsg(msg, queueName, consumerLogger)
       );
 
       consumerLogger.info(`Running many jobs ${job.one.name}`, {
-        job_ids: payloads.map(j => j.job_id)
+        job_ids: payloads.map((j) => j.job_id),
       });
 
       const results = await job.many(payloads);
 
-      messages.forEach(msg => channel.ack(msg));
+      messages.forEach((msg) => channel.ack(msg));
 
       results.forEach((tuple, idx) => {
         const ok = tuple[0];
@@ -114,10 +114,10 @@ export function defineConsumer(
 
       await Promise.all([
         onSuccessMany(successes),
-        onFailureMany(failureIds, failureErrors)
+        onFailureMany(failureIds, failureErrors),
       ]);
     },
-    maxFlushInterval: 50
+    maxFlushInterval: 50,
   });
 
   return async function consumer(msg: Message | null) {

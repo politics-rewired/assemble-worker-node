@@ -15,7 +15,7 @@ describe('poke', () => {
 
   beforeAll(() => {
     pool = new Pool({
-      connectionString: config.testDatabaseConnectionString
+      connectionString: config.testDatabaseConnectionString,
     });
     ({ poke } = makePgFunctions(pool));
   });
@@ -25,14 +25,14 @@ describe('poke', () => {
   });
 
   test('poke sends a message that should be sent - status now running, second poke shouldnt send two', async () => {
-    await withClient(pool, async client => {
+    await withClient(pool, async (client) => {
       await client.query(ENABLE_TEST_MODE);
 
       const oneSecondAgo = new Date();
       oneSecondAgo.setSeconds(oneSecondAgo.getSeconds() - 1);
 
       const {
-        rows: [row]
+        rows: [row],
       } = await client.query(
         `insert into assemble_worker.jobs (queue_name, payload, status, run_at) values ($1, $2, 'waiting to run', $3) returning id`,
         [DUMMY_QUEUE, DUMMY_PAYLOAD, oneSecondAgo]
@@ -57,7 +57,7 @@ describe('poke', () => {
       expect(matchingRows).toHaveLength(1);
 
       const {
-        rows: [dummyJob]
+        rows: [dummyJob],
       } = await client.query(
         `select * from assemble_worker.jobs where id = $1`,
         [row.id]

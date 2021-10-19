@@ -13,5 +13,5 @@ export const errToObj = (err: Error): any =>
 
 export const defaultLogger = createLogger({
   format: format.combine(format.timestamp(), format.json()),
-  transports: [new transports.Console({ level: 'info' })]
+  transports: [new transports.Console({ level: 'info' })],
 });

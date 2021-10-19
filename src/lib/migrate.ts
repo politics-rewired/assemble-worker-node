@@ -27,11 +27,11 @@ async function runMigration(
     'utf8'
   );
   await client.query({
-    text
+    text,
   });
   await client.query({
     text: `insert into assemble_worker.migrations (id) values ($1)`,
-    values: [migrationNumber]
+    values: [migrationNumber],
   });
 }
 
@@ -39,7 +39,7 @@ export async function migrate(client: PoolClient) {
   let latestMigration: number | null = null;
   try {
     const {
-      rows: [row]
+      rows: [row],
     } = await client.query(
       'select id from assemble_worker.migrations order by id desc limit 1;'
     );
@@ -55,7 +55,7 @@ export async function migrate(client: PoolClient) {
   }
 
   const migrationFiles = (await readdirSync(`${__dirname}/../sql`))
-    .filter(f => f.match(/^[0-9]{6}\.sql$/))
+    .filter((f) => f.match(/^[0-9]{6}\.sql$/))
     .sort();
 
   logger.debug('Found migrations %j', migrationFiles);

@@ -6,7 +6,7 @@ import {
   OnFailure,
   OnFailureMany,
   OnSuccess,
-  OnSuccessMany
+  OnSuccessMany,
 } from './pg-functions';
 
 const DISABLE_TRIGGERS = 'SET session_replication_role = replica';
@@ -25,7 +25,7 @@ describe('handlers', () => {
 
   beforeAll(() => {
     pool = new Pool({
-      connectionString: config.testDatabaseConnectionString
+      connectionString: config.testDatabaseConnectionString,
     });
     const fns = makePgFunctions(pool);
     ({ onSuccess, onFailure, onSuccessMany, onFailureMany } = fns);
@@ -36,11 +36,11 @@ describe('handlers', () => {
   });
 
   test('complete job deletes a job', async () => {
-    await withClient(pool, async client => {
+    await withClient(pool, async (client) => {
       await client.query(DISABLE_TRIGGERS);
 
       const {
-        rows: [row]
+        rows: [row],
       } = await client.query(
         `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
         [DUMMY_QUEUE, DUMMY_PAYLOAD]
@@ -48,7 +48,9 @@ describe('handlers', () => {
 
       await onSuccess(row.id);
 
-      const { rows: matchingRows } = await client.query(
+      const {
+        rows: matchingRows,
+      } = await client.query(
         'select * from assemble_worker.jobs where id = $1',
         [row.id]
       );
@@ -61,18 +63,18 @@ describe('handlers', () => {
   });
 
   test('complete many job deletes a job', async () => {
-    await withClient(pool, async client => {
+    await withClient(pool, async (client) => {
       await client.query(DISABLE_TRIGGERS);
 
       const {
-        rows: [jobOne]
+        rows: [jobOne],
       } = await client.query(
         `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
         [DUMMY_QUEUE, DUMMY_PAYLOAD]
       );
 
       const {
-        rows: [jobTwo]
+        rows: [jobTwo],
       } = await client.query(
         `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
         [DUMMY_QUEUE, DUMMY_PAYLOAD]
@@ -80,7 +82,9 @@ describe('handlers', () => {
 
       await onSuccessMany([jobOne.id, jobTwo.id]);
 
-      const { rows: matchingRows } = await client.query(
+      const {
+        rows: matchingRows,
+      } = await client.query(
         'select * from assemble_worker.jobs where id = ANY($1)',
         [[jobOne.id, jobTwo.id]]
       );
@@ -93,11 +97,11 @@ describe('handlers', () => {
   });
 
   test('fail job requeues the job', async () => {
-    await withClient(pool, async client => {
+    await withClient(pool, async (client) => {
       await client.query(DISABLE_TRIGGERS);
 
       const {
-        rows: [row]
+        rows: [row],
       } = await client.query(
         `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
         [DUMMY_QUEUE, DUMMY_PAYLOAD]
@@ -105,7 +109,9 @@ describe('handlers', () => {
 
       await onFailure(row.id, TEST_ERROR);
 
-      const { rows: matchingRows } = await client.query(
+      const {
+        rows: matchingRows,
+      } = await client.query(
         'select * from assemble_worker.jobs where id = $1',
         [row.id]
       );
@@ -128,18 +134,18 @@ describe('handlers', () => {
   });
 
   test('fail many job requeues the jobs', async () => {
-    await withClient(pool, async client => {
+    await withClient(pool, async (client) => {
       await client.query(DISABLE_TRIGGERS);
 
       const {
-        rows: [jobOne]
+        rows: [jobOne],
       } = await client.query(
         `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
         [DUMMY_QUEUE, DUMMY_PAYLOAD]
       );
 
       const {
-        rows: [jobTwo]
+        rows: [jobTwo],
       } = await client.query(
         `insert into assemble_worker.jobs (queue_name, payload, status) values ($1, $2, 'running') returning id`,
         [DUMMY_QUEUE, DUMMY_PAYLOAD]
@@ -147,7 +153,9 @@ describe('handlers', () => {
 
       await onFailureMany([jobOne.id, jobTwo.id], [TEST_ERROR, TEST_ERROR]);
 
-      const { rows: matchingRows } = await client.query(
+      const {
+        rows: matchingRows,
+      } = await client.query(
         'select * from assemble_worker.jobs where id = ANY($1)',
         [[jobOne.id, jobTwo.id]]
       );

@@ -1,6 +1,6 @@
 import { createBucketBatcher } from './bucket-batcher';
 
-const asyncSleep = n =>
+const asyncSleep = (n) =>
   new Promise((resolve, _reject) => setTimeout(resolve, n));
 
 describe('bucket batcher', () => {
@@ -10,14 +10,14 @@ describe('bucket batcher', () => {
 
     const bucketBatcher = createBucketBatcher({
       bucketSize: 3,
-      handleBatch: batch => {
+      handleBatch: (batch) => {
         calledWithBatchSize = batch.length;
         mock();
       },
-      maxFlushInterval: 200
+      maxFlushInterval: 200,
     });
 
-    [...Array(4)].forEach(_ => {
+    [...Array(4)].forEach((_) => {
       bucketBatcher.push('a');
     });
 
@@ -36,7 +36,7 @@ describe('bucket batcher', () => {
     const bucketBatcher = createBucketBatcher({
       bucketSize: 10,
       handleBatch: mock,
-      maxFlushInterval: 200
+      maxFlushInterval: 200,
     });
 
     bucketBatcher.push('a');
@@ -52,7 +52,7 @@ describe('bucket batcher', () => {
     const bucketBatcher = createBucketBatcher({
       bucketSize: 10,
       handleBatch: mock,
-      maxFlushInterval: 200
+      maxFlushInterval: 200,
     });
 
     bucketBatcher.push('a');

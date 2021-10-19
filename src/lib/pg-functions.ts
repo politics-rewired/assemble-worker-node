@@ -52,7 +52,7 @@ export function makePgFunctions(pool: Pool) {
    */
   const onSuccess = async (jobId: number, client?: PoolClient) => {
     return (client || pool).query('select assemble_worker.complete_job($1)', [
-      jobId
+      jobId,
     ]);
   };
 
@@ -62,10 +62,9 @@ export function makePgFunctions(pool: Pool) {
    * @param client optional postgres client if session matters
    */
   const onSuccessMany = async (jobIds: number[], client?: PoolClient) => {
-    return (client || pool).query(
-      'select assemble_worker.complete_many_jobs($1)',
-      [jobIds]
-    );
+    return (
+      client || pool
+    ).query('select assemble_worker.complete_many_jobs($1)', [jobIds]);
   };
 
   /**
@@ -81,7 +80,7 @@ export function makePgFunctions(pool: Pool) {
   ) => {
     return (client || pool).query('select assemble_worker.fail_job($1, $2)', [
       jobId,
-      error
+      error,
     ]);
   };
 
@@ -96,10 +95,9 @@ export function makePgFunctions(pool: Pool) {
     errors: string[],
     client?: PoolClient
   ) => {
-    return (client || pool).query(
-      'select assemble_worker.fail_many_jobs($1, $2)',
-      [jobIds, errors]
-    );
+    return (
+      client || pool
+    ).query('select assemble_worker.fail_many_jobs($1, $2)', [jobIds, errors]);
   };
 
   /**
@@ -129,7 +127,7 @@ export function makePgFunctions(pool: Pool) {
    */
   const registerQueue = async (queueName: string, client?: PoolClient) => {
     return (client || pool).query('select assemble_worker.register_queue($1)', [
-      queueName
+      queueName,
     ]);
   };
 
@@ -140,6 +138,6 @@ export function makePgFunctions(pool: Pool) {
     onSuccess,
     onSuccessMany,
     poke,
-    registerQueue
+    registerQueue,
   };
 }

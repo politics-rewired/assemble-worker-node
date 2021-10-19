@@ -26,6 +26,6 @@ export const createBucketBatcher = <T>(opts: BucketBatcherOpts<T>) => {
     },
     teardown: () => {
       clearInterval(timer);
-    }
+    },
   };
 };

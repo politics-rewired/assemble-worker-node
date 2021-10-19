@@ -8,7 +8,7 @@ import {
   makePgFunctions,
   OnFailure,
   Poke,
-  RegisterQueue
+  RegisterQueue,
 } from './pg-functions';
 import { createRunner } from './rabbit-runner';
 import { defaultLogger } from './utils';
@@ -20,14 +20,14 @@ async function sleep(n: number) {
 }
 
 const DUMMY_PAYLOAD = () => ({
-  value: (Math.random() * 100).toString()
+  value: (Math.random() * 100).toString(),
 });
 
 const DUMMY_SUCCEEDING_JOB = async () => {
   return null;
 };
 
-const DUMMY_SUCCEEDING_MANY_JOB = async arr => {
+const DUMMY_SUCCEEDING_MANY_JOB = async (arr) => {
   return arr.slice();
 };
 
@@ -44,7 +44,7 @@ describe('integration tests', () => {
 
   beforeAll(() => {
     pool = new Pool({
-      connectionString: config.testDatabaseConnectionString
+      connectionString: config.testDatabaseConnectionString,
     });
     ({ addJob, poke, onFailure, registerQueue } = makePgFunctions(pool));
   });
@@ -96,7 +96,7 @@ describe('integration tests', () => {
     await addJob({
       payload: DUMMY_PAYLOAD(),
       queueName: JOB_NAME,
-      runAt: oneSecondAgo
+      runAt: oneSecondAgo,
     });
 
     await sleep(SLEEP_TIME);
@@ -130,7 +130,9 @@ describe('integration tests', () => {
 
     await sleep(SLEEP_TIME);
 
-    const { rows: foundFailedJobs } = await pool.query(
+    const {
+      rows: foundFailedJobs,
+    } = await pool.query(
       `select * from assemble_worker.jobs where status = 'waiting to retry'::assemble_worker.job_status and payload->>'value' = $1`,
       [payload.value]
     );
@@ -159,9 +161,9 @@ describe('integration tests', () => {
           task: {
             limit: 5,
             many: DUMMY_SUCCEEDING_MANY_JOB,
-            one: DUMMY_SUCCEEDING_JOB
-          }
-        }
+            one: DUMMY_SUCCEEDING_JOB,
+          },
+        },
       },
       defaultLogger,
       onSuccess,

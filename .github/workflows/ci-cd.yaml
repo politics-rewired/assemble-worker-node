@@ -55,6 +55,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
+      # GitHub does not allow overriding the container `command` to inject dependent service
+      # checks. Instead, we allow GitHub to start services in parallel and wait until ready and
+      # defer starting pg-amqp-bridge to here, manually.
       - name: Start AMQP Bridge
         run: |
           GITHUB_NETWORK=$(docker network ls | grep github | awk '{ print $2 }')

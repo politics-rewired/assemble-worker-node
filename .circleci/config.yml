@@ -23,10 +23,6 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run:
-          name: Lint commits
-          command: yarn commitlint-circle
-
-      - run:
           name: Lint codebase
           command: yarn lint
 

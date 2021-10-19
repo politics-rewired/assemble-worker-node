@@ -74,7 +74,6 @@
     "@bitjson/npm-scripts-info": "^1.0.0",
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
-    "@timbeyer/commitlint-circle": "^3.0.0",
     "@types/amqp-connection-manager": "^2.0.8",
     "@types/amqplib": "^0.5.13",
     "@types/debug": "^4.1.4",

@@ -48,7 +48,8 @@ jobs:
       SUPPRESS_SELF_INVITE: 'false'
       JOBS_SAME_PROCESS: '1'
 
-      TEST_DATABASE_URL: 'postgres://postgres:postgres@postgres:5432/assemble_worker_test'
+      TEST_AMQP_URI: 'amqp://localhost'
+      TEST_DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/assemble_worker_test'
 
     steps:
       - name: checkout

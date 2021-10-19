@@ -36,9 +36,7 @@ describe('assemble_worker.add_job', () => {
       const queueName = DUMMY_QUEUE();
       await addJob({ queueName, payload }, client);
 
-      const {
-        rows: foundPendingJob,
-      } = await client.query(
+      const { rows: foundPendingJob } = await client.query(
         `select * from assemble_worker.pending_jobs where payload->>'value' = $1`,
         [payload.value]
       );
@@ -57,9 +55,7 @@ describe('assemble_worker.add_job', () => {
       const queueName = DUMMY_QUEUE();
       await addJob({ queueName, payload }, client);
 
-      const {
-        rows: foundQueueCreateMessage,
-      } = await client.query(
+      const { rows: foundQueueCreateMessage } = await client.query(
         `select * from assemble_worker.test_queue_messages where routing_key = $1 and message_body = $2`,
         [META_QUEUE, queueName]
       );
@@ -80,9 +76,7 @@ describe('assemble_worker.add_job', () => {
       await addJob({ queueName, payload }, client);
       await registerQueue(queueName, client);
 
-      const {
-        rows: foundJobs,
-      } = await client.query(
+      const { rows: foundJobs } = await client.query(
         `select * from assemble_worker.jobs where payload->>'value' = $1`,
         [payload.value]
       );
@@ -103,9 +97,7 @@ describe('assemble_worker.add_job', () => {
       await addJob({ queueName, payload }, client);
       await registerQueue(queueName, client);
 
-      const {
-        rows: foundJobMessages,
-      } = await client.query(
+      const { rows: foundJobMessages } = await client.query(
         `select * from assemble_worker.test_queue_messages where routing_key = $1 and message_body::json->>'value'::text = $2`,
         [queueName, payload.value]
       );

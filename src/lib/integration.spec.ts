@@ -130,9 +130,7 @@ describe('integration tests', () => {
 
     await sleep(SLEEP_TIME);
 
-    const {
-      rows: foundFailedJobs,
-    } = await pool.query(
+    const { rows: foundFailedJobs } = await pool.query(
       `select * from assemble_worker.jobs where status = 'waiting to retry'::assemble_worker.job_status and payload->>'value' = $1`,
       [payload.value]
     );

@@ -62,9 +62,10 @@ export function makePgFunctions(pool: Pool) {
    * @param client optional postgres client if session matters
    */
   const onSuccessMany = async (jobIds: number[], client?: PoolClient) => {
-    return (
-      client || pool
-    ).query('select assemble_worker.complete_many_jobs($1)', [jobIds]);
+    return (client || pool).query(
+      'select assemble_worker.complete_many_jobs($1)',
+      [jobIds]
+    );
   };
 
   /**
@@ -95,9 +96,10 @@ export function makePgFunctions(pool: Pool) {
     errors: string[],
     client?: PoolClient
   ) => {
-    return (
-      client || pool
-    ).query('select assemble_worker.fail_many_jobs($1, $2)', [jobIds, errors]);
+    return (client || pool).query(
+      'select assemble_worker.fail_many_jobs($1, $2)',
+      [jobIds, errors]
+    );
   };
 
   /**

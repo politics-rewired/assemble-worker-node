@@ -1,0 +1,109 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version:
+          - 14.18.1-buster
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: assemble_worker_test
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -h localhost -p 5432"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3.9.7-alpine
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      WEBPACK_HOST: 'localhost'
+      WEBPACK_PORT: '3000'
+      DEV_APP_PORT: '8090'
+
+      BASE_URL: 'localhost:3000'
+      SESSION_SECRET: 'SuperSecret'
+      DST_REFERENCE_TIMEZONE: 'America/New_York'
+      PHONE_NUMBER_COUNTRY: US
+      SUPPRESS_SELF_INVITE: 'false'
+      JOBS_SAME_PROCESS: '1'
+
+      TEST_DATABASE_URL: 'postgres://postgres:postgres@postgres:5432/assemble_worker_test'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Start AMQP Bridge
+        run: ./amqp-bridge.sh
+
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Lint Apps
+        run: yarn lint
+
+      - name: Run Tests
+        run: yarn test --detectOpenHandles --forceExit --runInBand
+
+  # deploy-npm-release:
+  #   name: Publish NPM release
+  #   if: startsWith( github.ref, 'refs/tags/v')
+  #   needs: test
+  #   runs-on: ubuntu-latest
+  #   steps:
+
+  #     - uses: actions/checkout@v2
+
+  #     - uses: actions/setup-node@v2
+  #       with:
+  #         node-version: '14'
+
+  #     - name: Get yarn cache directory path
+  #       id: yarn-cache-dir-path
+  #       run: echo "::set-output name=dir::$(yarn cache dir)"
+
+  #     - uses: actions/cache@v2
+  #       id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+  #       with:
+  #         path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+  #         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-yarn-
+
+  #     - run: yarn install
+
+  #     - run: yarn build
+
+  #     - uses: JS-DevTools/npm-publish@v1
+  #       with:
+  #         token: ${{ secrets.NPM_AUTOMATION_TOKEN }}

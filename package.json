@@ -56,14 +56,14 @@
     "prepare-release": "One-step: clean, build, test, publish docs, and prep a release"
   },
   "engines": {
-    "node": ">=8.9"
+    "node": ">=14"
   },
   "dependencies": {
     "amqp-connection-manager": "^3.0.0",
     "amqplib": "^0.5.5",
     "envalid": "^6.0.2",
     "lodash": "^4.17.15",
-    "pg": "^7.18.2",
+    "pg": "^8.7.1",
     "sha.js": "^2.4.11"
   },
   "peerDependencies": {
@@ -80,7 +80,7 @@
     "@types/jest": "^24.0.16",
     "@types/lodash": "^4.14.136",
     "@types/node": "^12.6.8",
-    "@types/pg": "^7.14.3",
+    "@types/pg": "^8.6.1",
     "codecov": "^3.5.0",
     "commitizen": "^4.2.2",
     "csstype": "^2.6.9",
